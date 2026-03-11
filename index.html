@@ -6,7 +6,6 @@
     <title>Lector y Captura - Hydrovec</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        /* Mismos estilos de diseño limpio */
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #eef2f5; padding: 15px; margin: 0; }
         .contenedor { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 800px; margin: auto; }
         h1 { color: #004a99; text-align: center; border-bottom: 3px solid #004a99; padding-bottom: 10px; font-size: 1.5rem; margin-top: 0; }
@@ -26,10 +25,13 @@
         td:first-child { text-align: left; font-weight: bold; color: #004a99; }
         .error { color: #d9534f; background: #fdf7f7; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #d9534f; }
         
-        /* Estilos nuevos para el formulario de captura */
-        .input-group { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #28a745; }
-        .input-group strong { display: block; margin-bottom: 8px; color: #333; }
-        .input-control { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        /* Estilos del formulario de captura */
+        .input-group { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #28a745; transition: all 0.3s ease; }
+        .input-group strong { display: block; margin-bottom: 4px; color: #333; }
+        .rango-texto { font-size: 0.8rem; color: #666; margin-bottom: 8px; font-style: italic; }
+        .input-control { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 1rem; }
+        .alerta-rango { display: none; color: #d9534f; font-size: 0.85rem; margin-bottom: 5px; font-weight: bold; }
+        .comentario-box { display: none; } /* Oculto por defecto */
     </style>
 </head>
 <body>
@@ -61,8 +63,6 @@
     const URL_CSV = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=BASEDATOS`;
     
     let html5QrCode;
-    
-    // Variables globales para recordar la información al abrir el formulario
     let headersGlobales = [];
     let valoresGlobales = [];
     let clienteGlobal = "";
@@ -76,7 +76,7 @@
     function arrancarCamara() {
         html5QrCode.start({ facingMode: "environment" }, { fps: 15, disableFlip: false }, alEscanearExito, () => {})
         .catch(err => {
-            document.getElementById('reader').innerHTML = `<div class="error">Error de Cámara.</div>`;
+            document.getElementById('reader').innerHTML = `<div class="error">Error de Cámara. Asegúrate de usar HTTPS.</div>`;
         });
     }
 
@@ -105,12 +105,10 @@
             const registro = filas.find(f => f[encabezados.indexOf("Cliente")] === cliente && f[encabezados.indexOf("Equipos")] === equipo);
 
             if (registro) {
-                // Guardamos los datos para usarlos en el formulario
                 headersGlobales = encabezados;
                 valoresGlobales = registro;
                 clienteGlobal = cliente;
                 equipoGlobal = equipo;
-                
                 renderizarFicha();
             } else {
                 mostrarError("Equipo no encontrado.");
@@ -147,7 +145,7 @@
         document.getElementById('datos-ficha').innerHTML = html;
     }
 
-    // --- SECCIÓN NUEVA: LÓGICA DEL FORMULARIO ---
+    // --- LÓGICA DEL FORMULARIO Y VALIDACIÓN DINÁMICA ---
 
     function abrirFormulario() {
         document.getElementById('resultado').style.display = 'none';
@@ -156,26 +154,84 @@
         document.getElementById('cabecera-form').innerHTML = `
             <h2>Nuevo Registro: ${clienteGlobal}</h2>
             <h3>${equipoGlobal}</h3>
-            <p>Ingresa los resultados para los parámetros configurados.</p>
+            <p>Ingresa los resultados. Si un valor está fuera de rango, se requerirá un comentario.</p>
         `;
 
         let htmlCampos = "";
 
-        // Generamos un bloque de input SOLO para los parámetros que sí existen
         for (let i = 1; i <= 47; i++) {
             const param = getVal(`Parametro${i}`);
             if (param !== "N/A") {
                 const unidad = getVal(`Unidad${i}`);
+                const limInf = getVal(`LimiteInferior${i}`);
+                const limSup = getVal(`LimiteSuperior${i}`);
+
+                // Guardamos los límites en atributos 'data-min' y 'data-max' para leerlos fácil con JS
                 htmlCampos += `
-                    <div class="input-group">
+                    <div class="input-group" id="grupo_${i}">
                         <strong>${i}. ${param} <small>(${unidad !== "N/A" ? unidad : ""})</small></strong>
-                        <input type="text" class="input-control" id="resultado_${i}" placeholder="Escribe el resultado aquí">
-                        <input type="text" class="input-control" id="comentario_${i}" placeholder="Comentarios (Opcional)">
+                        <div class="rango-texto">Rango esperado: ${limInf} a ${limSup}</div>
+                        
+                        <input type="number" step="any" class="input-control" id="resultado_${i}" 
+                               placeholder="Capturar resultado" 
+                               data-min="${limInf}" data-max="${limSup}" 
+                               oninput="validarLimites(this, ${i})">
+                        
+                        <div class="alerta-rango" id="alerta_${i}">⚠️ Valor fuera de rango. Se requiere justificación:</div>
+                        
+                        <input type="text" class="input-control comentario-box" id="comentario_${i}" 
+                               placeholder="Escribe un comentario o justificación...">
                     </div>
                 `;
             }
         }
         document.getElementById('campos-dinamicos').innerHTML = htmlCampos;
+    }
+
+    // Función que evalúa en tiempo real si el valor es correcto
+    function validarLimites(inputElem, index) {
+        const valorTexto = inputElem.value.trim();
+        const minTexto = inputElem.getAttribute('data-min');
+        const maxTexto = inputElem.getAttribute('data-max');
+        
+        const divComentario = document.getElementById(`comentario_${index}`);
+        const alerta = document.getElementById(`alerta_${index}`);
+        const grupo = document.getElementById(`grupo_${index}`);
+
+        // Si el técnico borra el número, ocultamos todo y volvemos a verde
+        if (valorTexto === "") {
+            divComentario.style.display = 'none';
+            alerta.style.display = 'none';
+            grupo.style.borderLeftColor = '#28a745';
+            return;
+        }
+
+        // Convertimos los textos a números reales
+        const valor = parseFloat(valorTexto);
+        const min = parseFloat(minTexto);
+        const max = parseFloat(maxTexto);
+
+        let fueraDeRango = false;
+
+        // Validamos solo si lo que escribió es un número válido
+        if (!isNaN(valor)) {
+            // Checamos límite inferior (si existe y es número)
+            if (!isNaN(min) && valor < min) fueraDeRango = true;
+            // Checamos límite superior (si existe y es número)
+            if (!isNaN(max) && valor > max) fueraDeRango = true;
+        }
+
+        // Cambiamos la interfaz según el resultado
+        if (fueraDeRango) {
+            divComentario.style.display = 'block';
+            alerta.style.display = 'block';
+            grupo.style.borderLeftColor = '#dc3545'; // Borde rojo de alerta
+        } else {
+            divComentario.style.display = 'none';
+            divComentario.value = ''; // Limpiamos el comentario si corrigió el número
+            alerta.style.display = 'none';
+            grupo.style.borderLeftColor = '#28a745'; // Borde verde de "Todo OK"
+        }
     }
 
     function cancelarFormulario() {
@@ -184,7 +240,7 @@
     }
 
     function guardarDatos() {
-        alert("¡Interfaz de captura lista!\n\nPara que estos datos viajen y se guarden en tu hoja de 'registro' en Google Sheets, necesitamos conectarlo con Google Apps Script.");
+        alert("Botón de guardado listo. El siguiente paso es conectarlo con Google Apps Script para empujar los datos.");
     }
 
     function mostrarError(mensaje) {
