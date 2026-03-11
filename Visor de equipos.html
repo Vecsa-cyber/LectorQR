@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lector de Equipos - Hydrovec</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background: #eef2f5; padding: 20px; margin: 0; }
+        .contenedor { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
+        h1 { color: #004a99; text-align: center; border-bottom: 2px solid #004a99; padding-bottom: 10px; }
+        #reader { width: 100%; margin-bottom: 20px; border-radius: 8px; overflow: hidden; }
+        .parametro { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .label { font-weight: bold; color: #555; }
+        .valor { color: #000; text-align: right; }
+        .btn { display: block; width: 100%; padding: 12px; background: #004a99; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; margin-top: 20px; text-align: center; }
+        #resultado { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="contenedor">
+    <h1>Lector Hydrovec</h1>
+
+    <div id="seccion-escaner">
+        <p style="text-align: center; color: #666;">Apunta al QR del equipo para ver su información.</p>
+        <div id="reader"></div>
+    </div>
+
+    <div id="resultado">
+        <div id="datos-ficha"></div>
+        <button class="btn" onclick="reiniciarEscaner()">Escanear otro equipo</button>
+    </div>
+</div>
+
+<script>
+    const SHEET_ID = '1c6oCi27Vneu7y7GsOxDszICAunDAqegFrMqA_cVnRsQ';
+    const URL_CSV = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=BASEDATOS`;
+    
+    let html5QrCode;
+
+    // Iniciar la cámara al cargar la página
+    window.onload = () => {
+        html5QrCode = new Html5Qrcode("reader");
+        arrancarCamara();
+    };
+
+    function arrancarCamara() {
+        // Quitamos el 'qrbox' para que el algoritmo busque en TODO el video, no solo en el centro.
+        // Subimos a 15 fps para que lea más rápido.
+        const config = { 
+            fps: 15,
+            disableFlip: false // Ayuda si la cámara del celular está en modo "espejo"
+        }; 
+        
+        // Intentar usar cámara trasera
+        html5QrCode.start(
+            { facingMode: "environment" }, 
+            config, 
+            alEscanearExito,
+            (errorDeEscaneo) => {
+                // Esto se ejecuta 15 veces por segundo cuando NO detecta nada.
+                // Lo dejamos vacío para que no llene la consola de basura.
+            }
+        )
+        .catch(err => {
+            console.error("Error de cámara:", err);
+            document.getElementById('reader').innerHTML = `<p style="color:red; text-align:center;">Error al abrir la cámara. Revisa permisos o HTTPS.</p>`;
+        });
+    }
+
+    // Función que se dispara cuando lee el QR
+    function alEscanearExito(textoDecodificado) {
+        // Detener la cámara
+        html5QrCode.stop().then(() => {
+            // El texto viene como "Cliente|Equipo", lo separamos
+            const partes = textoDecodificado.split('|');
+            
+            if (partes.length === 2) {
+                const clienteEscaneado = partes[0].trim();
+                const equipoEscaneado = partes[1].trim();
+                buscarEnBaseDeDatos(clienteEscaneado, equipoEscaneado);
+            } else {
+                mostrarError("QR inválido. No tiene el formato Cliente|Equipo.");
+            }
+        });
+    }
+
+    async function buscarEnBaseDeDatos(cliente, equipo) {
+        document.getElementById('seccion-escaner').style.display = 'none';
+        const divResultado = document.getElementById('resultado');
+        const divDatos = document.getElementById('datos-ficha');
+        
+        divResultado.style.display = 'block';
+        divDatos.innerHTML = `<h3 style="text-align:center;">Consultando base de datos...</h3>`;
+
+        try {
+            const respuesta = await fetch(URL_CSV);
+            const datosCSV = await respuesta.text();
+            
+            // Procesar CSV
+            const filas = datosCSV.split("\n").map(f => f.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/"/g, "").trim()));
+            const encabezados = filas[0];
+            
+            const idxCliente = encabezados.indexOf("Cliente");
+            const idxEquipo = encabezados.indexOf("Equipos");
+
+            // Buscar la coincidencia exacta
+            const registro = filas.find(f => f[idxCliente] === cliente && f[idxEquipo] === equipo);
+
+            if (registro) {
+                renderizarFicha(encabezados, registro, cliente, equipo);
+            } else {
+                mostrarError(`No se encontró el equipo <b>${equipo}</b> del cliente <b>${cliente}</b> en la base de datos.`);
+            }
+
+        } catch (error) {
+            mostrarError("No se pudo conectar con el servidor de Google Sheets.");
+        }
+    }
+
+    function renderizarFicha(encabezados, valores, cliente, equipo) {
+        let html = `
+            <div style="background:#eef5ff; padding:15px; border-radius:8px; margin-bottom:20px; text-align:center;">
+                <strong>${cliente}</strong><br>
+                <span style="color:#004a99; font-size:1.3rem;">${equipo}</span>
+            </div>
+        `;
+
+        encabezados.forEach((nombre, i) => {
+            const valor = valores[i];
+            // Filtramos las columnas que ya usamos y las vacías
+            if (valor && valor !== "" && nombre !== "Cliente" && nombre !== "Equipos" && nombre !== "") {
+                html += `
+                    <div class="parametro">
+                        <span class="label">${nombre}</span>
+                        <span class="valor">${valor}</span>
+                    </div>`;
+            }
+        });
+
+        document.getElementById('datos-ficha').innerHTML = html;
+    }
+
+    function mostrarError(mensaje) {
+        document.getElementById('seccion-escaner').style.display = 'none';
+        document.getElementById('resultado').style.display = 'block';
+        document.getElementById('datos-ficha').innerHTML = `
+            <div style="color:red; text-align:center; padding:20px;">
+                <h3>⚠️ Error</h3>
+                <p>${mensaje}</p>
+            </div>
+        `;
+    }
+
+    function reiniciarEscaner() {
+        document.getElementById('resultado').style.display = 'none';
+        document.getElementById('seccion-escaner').style.display = 'block';
+        arrancarCamara();
+    }
+</script>
+</body>
+</html>
