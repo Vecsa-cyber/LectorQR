@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lector de Equipos - Hydrovec</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        /* Diseño general */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #eef2f5; padding: 15px; margin: 0; }
+        .contenedor { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 800px; margin: auto; }
+        h1 { color: #004a99; text-align: center; border-bottom: 3px solid #004a99; padding-bottom: 10px; font-size: 1.5rem; margin-top: 0; }
+        
+        /* Escáner */
+        #seccion-escaner p { text-align: center; color: #666; font-size: 0.9rem; margin-bottom: 15px; }
+        #reader { width: 100%; margin-bottom: 20px; border-radius: 8px; overflow: hidden; background: #000; }
+        
+        /* Botones */
+        .btn { display: block; width: 100%; padding: 15px; background: #004a99; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 25px; text-align: center; text-transform: uppercase; letter-spacing: 1px; }
+        .btn:active { background: #003366; }
+        
+        /* Ocultar resultados por defecto */
+        #resultado { display: none; }
+
+        /* Estilos de la cabecera de información */
+        .info-cabecera { background: #f0f7ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 5px solid #004a99; }
+        .info-cabecera h2 { margin: 0 0 5px 0; color: #004a99; text-align: center; font-size: 1.3rem; }
+        .info-cabecera h3 { margin: 0 0 15px 0; color: #333; text-align: center; font-size: 1.1rem; }
+        .info-cabecera p { margin: 6px 0; font-size: 0.95rem; color: #444; display: flex; justify-content: space-between; border-bottom: 1px dashed #ccc; padding-bottom: 4px; }
+        
+        /* Estilos de la tabla responsiva */
+        .titulo-tabla { color: #004a99; border-bottom: 2px solid #004a99; padding-bottom: 5px; font-size: 1.2rem; margin-top: 20px; margin-bottom: 10px; }
+        .tabla-contenedor { overflow-x: auto; margin-top: 10px; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1); background: white; }
+        table { width: 100%; border-collapse: collapse; min-width: 700px; font-size: 0.85rem; }
+        th { background-color: #004a99; color: white; padding: 12px 10px; text-align: center; position: sticky; top: 0; }
+        td { padding: 10px; border-bottom: 1px solid #eee; color: #333; text-align: center; }
+        td:first-child { text-align: left; font-weight: 600; color: #004a99; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        
+        /* Mensajes de estado */
+        .mensaje-estado { text-align: center; padding: 20px; color: #555; font-size: 1.1rem; font-weight: bold; }
+        .error { color: #d9534f; background: #fdf7f7; border: 1px solid #d9534f; padding: 15px; border-radius: 8px; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="contenedor">
+    <h1>HYDROVEC - Lector</h1>
+
+    <div id="seccion-escaner">
+        <p>Apunta al código QR para cargar el reporte técnico.</p>
+        <div id="reader"></div>
+    </div>
+
+    <div id="resultado">
+        <div id="datos-ficha"></div>
+        <button class="btn" onclick="reiniciarEscaner()">Escanear otro equipo</button>
+    </div>
+</div>
+
+<script>
+    // Configuración de la Base de Datos
+    const SHEET_ID = '1c6oCi27Vneu7y7GsOxDszICAunDAqegFrMqA_cVnRsQ';
+    const URL_CSV = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=BASEDATOS`;
+    
+    let html5QrCode;
+
+    // Iniciar la cámara al cargar la página
+    window.onload = () => {
+        html5QrCode = new Html5Qrcode("reader");
+        arrancarCamara();
+    };
+
+    function arrancarCamara() {
+        const config = { 
+            fps: 15, 
+            disableFlip: false // Permite que busque en todo el video, ideal para celulares
+        };
+        
+        html5QrCode.start({ facingMode: "environment" }, config, alEscanearExito, () => {})
+        .catch(err => {
+            console.error("Error de cámara:", err);
+            document.getElementById('reader').innerHTML = `
+                <div class="error">
+                    <h3>⚠️ Error de Cámara</h3>
+                    <p>No se pudo acceder a la cámara. Asegúrate de dar los permisos y usar una conexión segura (HTTPS).</p>
+                </div>`;
+        });
+    }
+
+    // Al detectar el QR
+    function alEscanearExito(textoDecodificado) {
+        html5QrCode.stop().then(() => {
+            // Separar Cliente|Equipo
+            const partes = textoDecodificado.split('|');
+            
+            if (partes.length === 2) {
+                const clienteEscaneado = partes[0].trim();
+                const equipoEscaneado = partes[1].trim();
+                buscarEnBaseDeDatos(clienteEscaneado, equipoEscaneado);
+            } else {
+                mostrarError("El código QR no tiene el formato correcto de Hydrovec (Cliente|Equipo).");
+            }
+        });
+    }
+
+    // Buscar en Google Sheets
+    async function buscarEnBaseDeDatos(cliente, equipo) {
+        document.getElementById('seccion-escaner').style.display = 'none';
+        const divResultado = document.getElementById('resultado');
+        const divDatos = document.getElementById('datos-ficha');
+        
+        divResultado.style.display = 'block';
+        divDatos.innerHTML = `<div class="mensaje-estado">Buscando información en la base de datos... ⏳</div>`;
+
+        try {
+            const respuesta = await fetch(URL_CSV);
+            if (!respuesta.ok) throw new Error("Fallo en la respuesta del servidor");
+            
+            const datosCSV = await respuesta.text();
+            
+            // Procesar filas de forma segura (ignorando comas dentro de comillas)
+            const filas = datosCSV.split("\n").map(f => f.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/"/g, "").trim()));
+            const encabezados = filas[0];
+            
+            const idxCliente = encabezados.indexOf("Cliente");
+            const idxEquipo = encabezados.indexOf("Equipos");
+
+            // Buscar coincidencia
+            const registro = filas.find(f => f[idxCliente] === cliente && f[idxEquipo] === equipo);
+
+            if (registro) {
+                renderizarFicha(encabezados, registro, cliente, equipo);
+            } else {
+                mostrarError(`No se encontró el equipo <b>${equipo}</b> del cliente <b>${cliente}</b>.`);
+            }
+
+        } catch (error) {
+            console.error(error);
+            mostrarError("No se pudo conectar con el servidor de Google Sheets. Verifica tu conexión a internet.");
+        }
+    }
+
+    // Dibujar la interfaz con los datos
+    function renderizarFicha(encabezados, valores, cliente, equipo) {
+        // Función auxiliar para obtener valores sin errores
+        const getVal = (col) => {
+            const idx = encabezados.indexOf(col);
+            return (idx !== -1 && valores[idx] && valores[idx] !== "") ? valores[idx] : "N/A";
+        };
+
+        // 1. Datos de cabecera principal
+        const fecha = getVal("Fecha");
+        const activo = getVal("# Activo");
+        const folio = getVal("Folio Checklist");
+        const tecnico = getVal("Tecnico Responsable");
+
+        let html = `
+            <div class="info-cabecera">
+                <h2>${cliente}</h2>
+                <h3>Equipo: ${equipo}</h3>
+                <p><span>📅 Fecha:</span> <strong>${fecha}</strong></p>
+                <p><span>🏷️ # Activo:</span> <strong>${activo}</strong></p>
+                <p><span>📄 Folio:</span> <strong>${folio}</strong></p>
+                <p><span>👨‍🔧 Técnico:</span> <strong>${tecnico}</strong></p>
+            </div>
+            
+            <h3 class="titulo-tabla">Análisis de Parámetros</h3>
+            <div class="tabla-contenedor">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Parámetro</th>
+                            <th>Punto Muestreo</th>
+                            <th>Equipo</th>
+                            <th>Unidad</th>
+                            <th>Lím. Inf.</th>
+                            <th>Lím. Sup.</th>
+                            <th>Tipo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        let hayParametros = false;
+
+        // 2. Bucle inteligente para los 47 parámetros
+        for (let i = 1; i <= 47; i++) {
+            const param = getVal(`Parametro${i}`);
+            
+            if (param !== "N/A") {
+                hayParametros = true;
+                const punto = getVal(`PuntoMuestro${i}`);
+                const eq = getVal(`Equipo${i}`);
+                const unidad = getVal(`Unidad${i}`);
+                const limInf = getVal(`LimiteInferior${i}`);
+                const limSup = getVal(`LimiteSuperior${i}`);
+                const tipo = getVal(`TipoParametro${i}`);
+
+                html += `
+                    <tr>
+                        <td>${param}</td>
+                        <td>${punto !== "N/A" ? punto : "-"}</td>
+                        <td>${eq !== "N/A" ? eq : "-"}</td>
+                        <td>${unidad !== "N/A" ? unidad : "-"}</td>
+                        <td>${limInf !== "N/A" ? limInf : "-"}</td>
+                        <td>${limSup !== "N/A" ? limSup : "-"}</td>
+                        <td>${tipo !== "N/A" ? tipo : "-"}</td>
+                    </tr>
+                `;
+            }
+        }
+
+        if (!hayParametros) {
+            html += `<tr><td colspan="7" style="text-align: center; color: #888; padding: 20px;">No hay parámetros capturados para este equipo.</td></tr>`;
+        }
+
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        document.getElementById('datos-ficha').innerHTML = html;
+    }
+
+    // Manejo de errores
+    function mostrarError(mensaje) {
+        document.getElementById('seccion-escaner').style.display = 'none';
+        document.getElementById('resultado').style.display = 'block';
+        document.getElementById('datos-ficha').innerHTML = `
+            <div class="error">
+                <h3 style="margin-top:0;">⚠️ Alerta</h3>
+                <p style="margin-bottom:0;">${mensaje}</p>
+            </div>
+        `;
+    }
+
+    // Volver a escanear
+    function reiniciarEscaner() {
+        document.getElementById('resultado').style.display = 'none';
+        document.getElementById('seccion-escaner').style.display = 'block';
+        document.getElementById('datos-ficha').innerHTML = ""; // Limpiar datos anteriores
+        arrancarCamara();
+    }
+</script>
+</body>
+</html>
+
