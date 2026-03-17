@@ -121,7 +121,7 @@ async function buscarEnBaseDeDatos(cliente, equipo) {
 }
 
 function renderizarFicha(encabezados, valores, cliente, equipo) {
-    // Cabecera de la ficha adaptada al Dark Mode (fondo oscuro, texto claro)
+    // Cabecera de la ficha adaptada al Dark Mode
     let html = `
         <div style="background: var(--bg-color); padding:15px; border-radius:12px; margin-bottom:20px; text-align:center; border: 1px solid var(--border-color);">
             <strong style="color: var(--text-muted); font-size: 0.9rem;">${cliente}</strong><br>
@@ -129,8 +129,13 @@ function renderizarFicha(encabezados, valores, cliente, equipo) {
         </div>
     `;
 
-    encabezados.forEach((nombre, i) => {
+    // AQUI ESTÁ LA MAGIA: 
+    // .slice(0, -3) toma desde la primera columna (0) y recorta las últimas 3 (-3)
+    const encabezadosAMostrar = encabezados.slice(0, -3);
+
+    encabezadosAMostrar.forEach((nombre, i) => {
         const valor = valores[i];
+        
         // Filtramos las columnas que ya usamos y las vacías
         if (valor && valor !== "" && nombre !== "Cliente" && nombre !== "Equipos" && nombre !== "") {
             html += `
