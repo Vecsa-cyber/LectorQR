@@ -230,6 +230,18 @@ body {
     animation: slideUp 0.3s ease-out;
 }
 
+/* OPCIONAL PERO RECOMENDADO: Estilizar la barra de scroll para que se vea moderna */
+.bottom-sheet::-webkit-scrollbar {
+    width: 6px;
+}
+.bottom-sheet::-webkit-scrollbar-track {
+    background: transparent;
+}
+.bottom-sheet::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 10px;
+}
+
 @keyframes slideUp {
     from {
         transform: translateY(100%);

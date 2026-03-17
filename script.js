@@ -81,7 +81,7 @@ function alEscanearExito(textoDecodificado) {
 
 async function buscarEnBaseDeDatos(cliente, equipo) {
     // Ocultar cámara y mostrar bottom sheet con loader
-    document.getElementById('seccion-escaner').style.display = 'none';
+    //document.getElementById('seccion-escaner').style.display = 'none';
     const divResultado = document.getElementById('resultado');
     const divDatos = document.getElementById('datos-ficha');
 
@@ -145,7 +145,7 @@ function renderizarFicha(encabezados, valores, cliente, equipo) {
 }
 
 function mostrarError(mensaje) {
-    document.getElementById('seccion-escaner').style.display = 'none';
+    //document.getElementById('seccion-escaner').style.display = 'none';
     document.getElementById('resultado').style.display = 'block';
     
     // Error adaptado al Dark Mode
