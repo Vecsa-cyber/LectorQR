@@ -3,64 +3,55 @@
     --card-bg: #1e293b;
     --text-main: #f8fafc;
     --text-muted: #94a3b8;
-    --accent: #3b82f6;
-    /* El azul Hydrovec */
+    --accent: #3b82f6; /* El azul Hydrovec */
     --accent-hover: #2563eb;
+    --border-color: #334155;
+    --success: #10b981; /* Verde éxito */
+    --warning: #f59e0b; /* Naranja alerta */
 }
 
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    font-family: -apple-system, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 body {
     background-color: var(--bg-color);
     color: var(--text-main);
-    overflow: hidden;
-    /* Evita scroll en la cámara */
+    /* Importante: el body NO debe tener overflow hidden si queremos que el teclado no rompa el layout en móviles */
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
 }
 
 /* 1. CONTENEDOR PRINCIPAL: Altura dinámica para móviles */
-
 .app-container {
     position: relative;
     width: 100%;
     height: 100vh;
-    /* Fallback para navegadores viejos */
-    height: 100dvh;
-    /* Altura dinámica (ignora la barra del navegador en iOS/Android) */
+    height: 100dvh; /* Altura dinámica (ignora la barra del navegador) */
     max-width: 500px;
-    /* En PC se verá como un celular al centro */
     margin: 0 auto;
     background: #000;
-    overflow: hidden;
-    /* Evita que la página completa haga scroll */
+    overflow: hidden; /* Evita que la página completa haga scroll, forzándolo a los paneles internos */
 }
 
 /* --- ESTILOS DE LA CÁMARA --- */
 .pantalla-completa {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: 0; left: 0; width: 100%; height: 100%;
 }
 
-#reader {
-    width: 100%;
-    height: 100%;
-}
+#reader { width: 100%; height: 100%; }
 
 #reader video {
     width: 100% !important;
     height: 100% !important;
     object-fit: cover !important;
-    /* Llena toda la pantalla */
 }
 
-/* Ocultar UI fea por defecto de la librería */
+/* Ocultar UI por defecto de la librería */
 #reader img,
 #reader__dashboard_section_csr,
 #reader__dashboard_section_swaplink {
@@ -70,18 +61,14 @@ body {
 /* --- INTERFAZ SUPERPUESTA --- */
 .ui-overlay {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: 0; left: 0; width: 100%; height: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    pointer-events: none;
-    /* Deja que los toques pasen a la cámara/zoom */
-    /* Truco para oscurecer todo excepto el centro */
-    box-shadow: inset 0 0 0 1000px rgba(15, 23, 42, 0.85);
+    pointer-events: none; /* Deja que los toques pasen a la cámara/zoom */
+    box-shadow: inset 0 0 0 1000px rgba(15, 23, 42, 0.85); /* Truco para oscurecer */
+    z-index: 2;
 }
 
 .titulo-flotante {
@@ -92,226 +79,154 @@ body {
     letter-spacing: 1px;
 }
 
-/* 2. MARCO DEL ESCÁNER: Se adapta al ancho del celular */
+/* 2. MARCO DEL ESCÁNER */
 .marco-escaner {
     position: relative;
     width: 65vw;
-    /* Ocupa el 65% del ancho de la pantalla */
     height: 65vw;
-    /* Mantiene un cuadrado perfecto */
     max-width: 260px;
-    /* Límite máximo para pantallas grandes */
     max-height: 260px;
     margin-bottom: 20px;
-    /* Esto "corta" el overlay oscuro para que se vea claro el centro */
-    box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.85);
+    box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.85); /* "Corta" el centro claro */
     border-radius: 12px;
 }
 
-/* Esquinas personalizadas */
+/* Esquinas */
 .esquina {
-    position: absolute;
-    width: 40px;
-    height: 40px;
-    border-color: var(--accent);
-    border-style: solid;
+    position: absolute; width: 40px; height: 40px;
+    border-color: var(--accent); border-style: solid;
 }
+.top-left { top: 0; left: 0; border-width: 5px 0 0 5px; border-top-left-radius: 12px; }
+.top-right { top: 0; right: 0; border-width: 5px 5px 0 0; border-top-right-radius: 12px; }
+.bottom-left { bottom: 0; left: 0; border-width: 0 0 5px 5px; border-bottom-left-radius: 12px; }
+.bottom-right { bottom: 0; right: 0; border-width: 0 5px 5px 0; border-bottom-right-radius: 12px; }
 
-.top-left {
-    top: 0;
-    left: 0;
-    border-width: 5px 0 0 5px;
-    border-top-left-radius: 12px;
-}
-
-.top-right {
-    top: 0;
-    right: 0;
-    border-width: 5px 5px 0 0;
-    border-top-right-radius: 12px;
-}
-
-.bottom-left {
-    bottom: 0;
-    left: 0;
-    border-width: 0 0 5px 5px;
-    border-bottom-left-radius: 12px;
-}
-
-.bottom-right {
-    bottom: 0;
-    right: 0;
-    border-width: 0 5px 5px 0;
-    border-bottom-right-radius: 12px;
-}
-
-/* Línea Láser Animada */
+/* Láser */
 .laser {
-    position: absolute;
-    top: 0;
-    left: 5%;
-    width: 90%;
-    height: 2px;
-    background: var(--accent);
-    box-shadow: 0 0 10px var(--accent);
+    position: absolute; top: 0; left: 5%; width: 90%; height: 2px;
+    background: var(--accent); box-shadow: 0 0 10px var(--accent);
     animation: escanear 2s infinite ease-in-out;
 }
+@keyframes escanear { 0% { top: 5%; } 50% { top: 95%; } 100% { top: 5%; } }
 
-@keyframes escanear {
-    0% {
-        top: 5%;
-    }
-
-    50% {
-        top: 95%;
-    }
-
-    100% {
-        top: 5%;
-    }
-}
-
-/* Control de Zoom */
+/* Zoom */
 .control-zoom {
-    pointer-events: auto;
-    /* Para que se pueda tocar */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 15px;
-    margin-top: 40px;
-    width: 80%;
+    pointer-events: auto; /* Reactivamos toques */
+    display: flex; align-items: center; justify-content: center; gap: 15px; margin-top: 40px; width: 80%;
 }
-
-.control-zoom span {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: var(--text-main);
-}
-
+.control-zoom span { font-size: 1.5rem; font-weight: bold; color: var(--text-main); }
 #slider-zoom {
-    -webkit-appearance: none;
-    width: 100%;
-    height: 4px;
-    border-radius: 5px;
-    background: var(--text-muted);
-    outline: none;
+    -webkit-appearance: none; width: 100%; height: 4px; border-radius: 5px;
+    background: var(--text-muted); outline: none;
 }
-
 #slider-zoom::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: var(--accent);
-    cursor: pointer;
+    -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%;
+    background: var(--accent); cursor: pointer;
 }
 
-.texto-inferior {
-    position: absolute;
-    bottom: 40px;
-    font-size: 0.9rem;
-    color: var(--text-muted);
-}
+.texto-inferior { position: absolute; bottom: 40px; font-size: 0.9rem; color: var(--text-muted); }
+
 
 /* --- TARJETA DE RESULTADOS (Bottom Sheet) --- */
 .bottom-sheet {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    max-height: 85dvh; /* No crecerá más del 85% de la pantalla */
-    overflow-y: auto;  /* Si el contenido es largo, permite hacer scroll interno */
+    position: absolute; bottom: 0; left: 0; width: 100%;
+    max-height: 85dvh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
     background: var(--card-bg);
     border-radius: 24px 24px 0 0;
-    padding: 30px 24px 40px;
+    padding: 30px 24px 80px; /* IMPORTANTE: Padding inferior grande para que no tape los botones */
     z-index: 10;
-    box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+    box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+    pointer-events: auto; /* Permite scroll manual */
     animation: slideUp 0.3s ease-out;
 }
 
-/* OPCIONAL PERO RECOMENDADO: Estilizar la barra de scroll para que se vea moderna */
-.bottom-sheet::-webkit-scrollbar {
-    width: 6px;
-}
-.bottom-sheet::-webkit-scrollbar-track {
-    background: transparent;
-}
-.bottom-sheet::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 10px;
-}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-@keyframes slideUp {
-    from {
-        transform: translateY(100%);
-    }
-
-    to {
-        transform: translateY(0);
-    }
-}
+.bottom-sheet::-webkit-scrollbar { width: 6px; }
+.bottom-sheet::-webkit-scrollbar-track { background: transparent; }
+.bottom-sheet::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
 
 .indicador-arrastre {
-    width: 40px;
-    height: 5px;
-    background: var(--text-muted);
-    border-radius: 3px;
-    margin: -10px auto 20px;
-    opacity: 0.5;
+    width: 40px; height: 5px; background: var(--text-muted);
+    border-radius: 3px; margin: -10px auto 20px; opacity: 0.5;
 }
 
-/* Estilos de botones y textos compartidos del CSS anterior... */
-.btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    padding: 14px;
-    border: none;
-    border-radius: 12px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    margin-top: 20px;
-}
 
-.btn-primary {
-    background: var(--accent);
-    color: white;
-}
-
+/* --- ESTILOS DE LA FICHA TÉCNICA --- */
 .parametro {
-    display: flex;
-    justify-content: space-between;
-    padding: 12px 0;
-    border-bottom: 1px solid #334155;
+    display: flex; justify-content: space-between; padding: 12px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+.label { color: var(--text-muted); font-size: 0.9rem; }
+.valor { color: var(--text-main); font-weight: 500; text-align: right; }
+
+
+/* --- ESTILOS DEL FORMULARIO DE CAPTURA --- */
+.form-group {
+    margin-bottom: 22px;
+    text-align: left;
+    background: rgba(15, 23, 42, 0.3); /* Fondo sutil para agrupar inputs */
+    padding: 15px;
+    border-radius: 12px;
+    border-left: 3px solid transparent; /* Para pintar de verde/rojo luego */
 }
 
-.label {
-    color: var(--text-muted);
-    font-size: 0.9rem;
+.form-label {
+    display: block; color: var(--text-main); font-size: 1rem;
+    margin-bottom: 4px; font-weight: 600;
 }
 
-.valor {
-    color: var(--text-main);
-    font-weight: 500;
-    text-align: right;
+.form-input {
+    width: 100%; padding: 12px; border-radius: 8px;
+    border: 2px solid var(--border-color);
+    background: var(--bg-color); color: var(--text-main);
+    font-size: 1.1rem; /* Más grande para fácil lectura en celular */
+    transition: all 0.3s;
+    margin-top: 8px;
 }
+.form-input:focus { border-color: var(--accent); outline: none; }
+
+/* Textos de alerta y comentarios */
+.form-warning-text {
+    color: var(--warning); font-size: 0.85rem; margin-top: 8px;
+    display: none; font-weight: 500;
+}
+
+.form-comentario {
+    width: 100%; padding: 10px; border-radius: 8px;
+    border: 1px solid var(--warning); background: rgba(245, 158, 11, 0.1);
+    color: var(--text-main); margin-top: 8px; font-family: inherit;
+    resize: vertical; display: none;
+}
+
+
+/* --- BOTONES COMPARTIDOS --- */
+.btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 100%; padding: 14px; border: none; border-radius: 12px;
+    font-size: 1rem; font-weight: 600; cursor: pointer; transition: 0.2s;
+}
+.btn:active { transform: scale(0.98); }
+
+.btn-primary { background: var(--accent); color: white; margin-top: 15px; }
+.btn-primary:hover { background: var(--accent-hover); }
 
 .btn-secondary {
-    background: transparent;
-    color: var(--accent);
-    border: 2px solid var(--accent);
-    box-shadow: none;
-    margin-top: 20px;
+    background: transparent; color: var(--accent);
+    border: 2px solid var(--accent); margin-top: 20px;
 }
+.btn-secondary:hover { background: rgba(59, 130, 246, 0.1); }
 
-.btn-secondary:hover {
-    background: rgba(59, 130, 246, 0.1); /* Un fondo azul translúcido sutil */
-}
+.btn-success { background: var(--success); color: white; margin-top: 20px;}
+.btn-success:hover { background: #059669; }
 
-/* Reducimos el margen del botón primario para que agrupen bien */
-.btn-primary {
-    margin-top: 15px; 
+
+/* --- LOADER --- */
+.loader {
+    border: 3px solid var(--border-color); border-top: 3px solid var(--accent);
+    border-radius: 50%; width: 30px; height: 30px;
+    animation: spin 1s linear infinite; margin: 0 auto;
 }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
