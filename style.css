@@ -3,47 +3,60 @@
     --card-bg: #1e293b;
     --text-main: #f8fafc;
     --text-muted: #94a3b8;
-    --accent: #3b82f6; /* El azul Hydrovec */
+    --accent: #3b82f6;
+    /* El azul Hydrovec */
     --accent-hover: #2563eb;
     --border-color: #334155;
-    --success: #10b981; /* Verde éxito */
-    --warning: #f59e0b; /* Naranja alerta */
+
+    /* Agregamos estos dos colores para el formulario */
+    --success: #10b981;
+    /* Verde para "todo bien" */
+    --warning: #f59e0b;
+    /* Naranja/Amarillo para advertencias */
 }
 
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 body {
     background-color: var(--bg-color);
     color: var(--text-main);
-    /* Importante: el body NO debe tener overflow hidden si queremos que el teclado no rompa el layout en móviles */
+    /* Importante: Quitar overflow hidden de aquí para evitar problemas en móviles */
     margin: 0;
     -webkit-font-smoothing: antialiased;
 }
 
-/* 1. CONTENEDOR PRINCIPAL: Altura dinámica para móviles */
+/* 1. CONTENEDOR PRINCIPAL */
 .app-container {
     position: relative;
     width: 100%;
     height: 100vh;
-    height: 100dvh; /* Altura dinámica (ignora la barra del navegador) */
+    height: 100dvh;
+    /* Altura dinámica */
     max-width: 500px;
     margin: 0 auto;
     background: #000;
-    overflow: hidden; /* Evita que la página completa haga scroll, forzándolo a los paneles internos */
+    overflow: hidden;
+    /* Esto es vital aquí, no en el body */
 }
 
 /* --- ESTILOS DE LA CÁMARA --- */
 .pantalla-completa {
     position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
 }
 
-#reader { width: 100%; height: 100%; }
+#reader {
+    width: 100%;
+    height: 100%;
+}
 
 #reader video {
     width: 100% !important;
@@ -51,7 +64,6 @@ body {
     object-fit: cover !important;
 }
 
-/* Ocultar UI por defecto de la librería */
 #reader img,
 #reader__dashboard_section_csr,
 #reader__dashboard_section_swaplink {
@@ -61,13 +73,17 @@ body {
 /* --- INTERFAZ SUPERPUESTA --- */
 .ui-overlay {
     position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    pointer-events: none; /* Deja que los toques pasen a la cámara/zoom */
-    box-shadow: inset 0 0 0 1000px rgba(15, 23, 42, 0.85); /* Truco para oscurecer */
+    pointer-events: none;
+    /* Fundamental: deja pasar los toques a la cámara */
+    box-shadow: inset 0 0 0 1000px rgba(15, 23, 42, 0.85);
     z-index: 2;
 }
 
@@ -87,146 +103,313 @@ body {
     max-width: 260px;
     max-height: 260px;
     margin-bottom: 20px;
-    box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.85); /* "Corta" el centro claro */
+    box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.85);
     border-radius: 12px;
 }
 
 /* Esquinas */
 .esquina {
-    position: absolute; width: 40px; height: 40px;
-    border-color: var(--accent); border-style: solid;
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    border-color: var(--accent);
+    border-style: solid;
 }
-.top-left { top: 0; left: 0; border-width: 5px 0 0 5px; border-top-left-radius: 12px; }
-.top-right { top: 0; right: 0; border-width: 5px 5px 0 0; border-top-right-radius: 12px; }
-.bottom-left { bottom: 0; left: 0; border-width: 0 0 5px 5px; border-bottom-left-radius: 12px; }
-.bottom-right { bottom: 0; right: 0; border-width: 0 5px 5px 0; border-bottom-right-radius: 12px; }
 
-/* Láser */
+.top-left {
+    top: 0;
+    left: 0;
+    border-width: 5px 0 0 5px;
+    border-top-left-radius: 12px;
+}
+
+.top-right {
+    top: 0;
+    right: 0;
+    border-width: 5px 5px 0 0;
+    border-top-right-radius: 12px;
+}
+
+.bottom-left {
+    bottom: 0;
+    left: 0;
+    border-width: 0 0 5px 5px;
+    border-bottom-left-radius: 12px;
+}
+
+.bottom-right {
+    bottom: 0;
+    right: 0;
+    border-width: 0 5px 5px 0;
+    border-bottom-right-radius: 12px;
+}
+
+/* Láser animado */
 .laser {
-    position: absolute; top: 0; left: 5%; width: 90%; height: 2px;
-    background: var(--accent); box-shadow: 0 0 10px var(--accent);
+    position: absolute;
+    top: 0;
+    left: 5%;
+    width: 90%;
+    height: 2px;
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent);
     animation: escanear 2s infinite ease-in-out;
 }
-@keyframes escanear { 0% { top: 5%; } 50% { top: 95%; } 100% { top: 5%; } }
+
+@keyframes escanear {
+    0% {
+        top: 5%;
+    }
+
+    50% {
+        top: 95%;
+    }
+
+    100% {
+        top: 5%;
+    }
+}
 
 /* Zoom */
 .control-zoom {
-    pointer-events: auto; /* Reactivamos toques */
-    display: flex; align-items: center; justify-content: center; gap: 15px; margin-top: 40px; width: 80%;
-}
-.control-zoom span { font-size: 1.5rem; font-weight: bold; color: var(--text-main); }
-#slider-zoom {
-    -webkit-appearance: none; width: 100%; height: 4px; border-radius: 5px;
-    background: var(--text-muted); outline: none;
-}
-#slider-zoom::-webkit-slider-thumb {
-    -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%;
-    background: var(--accent); cursor: pointer;
+    pointer-events: auto;
+    /* Reactivamos toques solo para esto */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 40px;
+    width: 80%;
 }
 
-.texto-inferior { position: absolute; bottom: 40px; font-size: 0.9rem; color: var(--text-muted); }
+.control-zoom span {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--text-main);
+}
+
+#slider-zoom {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 5px;
+    background: var(--text-muted);
+    outline: none;
+}
+
+#slider-zoom::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+}
+
+.texto-inferior {
+    position: absolute;
+    bottom: 40px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
 
 
 /* --- TARJETA DE RESULTADOS (Bottom Sheet) --- */
 .bottom-sheet {
-    position: absolute; bottom: 0; left: 0; width: 100%;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
     max-height: 85dvh;
     overflow-y: auto;
-    -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
+    -webkit-overflow-scrolling: touch;
+    /* VITAL para scroll suave en iPhone/Android */
     background: var(--card-bg);
     border-radius: 24px 24px 0 0;
-    padding: 30px 24px 80px; /* IMPORTANTE: Padding inferior grande para que no tape los botones */
+
+    /* Aumenté el padding inferior a 80px para que el último botón no quede pegado al borde del teléfono */
+    padding: 30px 24px 80px;
+
     z-index: 10;
-    box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
-    pointer-events: auto; /* Permite scroll manual */
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.8);
+    pointer-events: auto;
+    /* Para que reciba toques/scroll independientemente de la cámara */
     animation: slideUp 0.3s ease-out;
 }
 
-@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.bottom-sheet::-webkit-scrollbar {
+    width: 6px;
+}
 
-.bottom-sheet::-webkit-scrollbar { width: 6px; }
-.bottom-sheet::-webkit-scrollbar-track { background: transparent; }
-.bottom-sheet::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
+.bottom-sheet::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.bottom-sheet::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 10px;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+
+    to {
+        transform: translateY(0);
+    }
+}
 
 .indicador-arrastre {
-    width: 40px; height: 5px; background: var(--text-muted);
-    border-radius: 3px; margin: -10px auto 20px; opacity: 0.5;
+    width: 40px;
+    height: 5px;
+    background: var(--text-muted);
+    border-radius: 3px;
+    margin: -10px auto 20px;
+    opacity: 0.5;
 }
 
 
-/* --- ESTILOS DE LA FICHA TÉCNICA --- */
+/* --- ESTILOS DE LA FICHA TÉCNICA Y PARÁMETROS --- */
 .parametro {
-    display: flex; justify-content: space-between; padding: 12px 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
     border-bottom: 1px solid var(--border-color);
 }
-.label { color: var(--text-muted); font-size: 0.9rem; }
-.valor { color: var(--text-main); font-weight: 500; text-align: right; }
+
+.label {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.valor {
+    color: var(--text-main);
+    font-weight: 500;
+    text-align: right;
+}
 
 
-/* --- ESTILOS DEL FORMULARIO DE CAPTURA --- */
+/* ======================================================== */
+/* NUEVOS ESTILOS: PARA EL FORMULARIO DE CAPTURA (VISTA 2) */
+/* ======================================================== */
+
 .form-group {
     margin-bottom: 22px;
     text-align: left;
-    background: rgba(15, 23, 42, 0.3); /* Fondo sutil para agrupar inputs */
+    background: rgba(15, 23, 42, 0.3);
     padding: 15px;
     border-radius: 12px;
-    border-left: 3px solid transparent; /* Para pintar de verde/rojo luego */
+    border-left: 3px solid transparent;
+    /* Se pinta de verde/naranja con JS */
 }
 
 .form-label {
-    display: block; color: var(--text-main); font-size: 1rem;
-    margin-bottom: 4px; font-weight: 600;
+    display: block;
+    color: var(--text-main);
+    font-size: 1rem;
+    margin-bottom: 4px;
+    font-weight: 600;
 }
 
 .form-input {
-    width: 100%; padding: 12px; border-radius: 8px;
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
     border: 2px solid var(--border-color);
-    background: var(--bg-color); color: var(--text-main);
-    font-size: 1.1rem; /* Más grande para fácil lectura en celular */
+    background: var(--bg-color);
+    color: var(--text-main);
+    font-size: 1.1rem;
+    /* Grande para celulares */
     transition: all 0.3s;
     margin-top: 8px;
 }
-.form-input:focus { border-color: var(--accent); outline: none; }
 
-/* Textos de alerta y comentarios */
+.form-input:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
 .form-warning-text {
-    color: var(--warning); font-size: 0.85rem; margin-top: 8px;
-    display: none; font-weight: 500;
+    color: var(--warning);
+    font-size: 0.85rem;
+    margin-top: 8px;
+    display: none;
+    font-weight: 500;
 }
 
 .form-comentario {
-    width: 100%; padding: 10px; border-radius: 8px;
-    border: 1px solid var(--warning); background: rgba(245, 158, 11, 0.1);
-    color: var(--text-main); margin-top: 8px; font-family: inherit;
-    resize: vertical; display: none;
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid var(--warning);
+    background: rgba(245, 158, 11, 0.1);
+    color: var(--text-main);
+    margin-top: 8px;
+    font-family: inherit;
+    resize: vertical;
+    display: none;
 }
 
 
 /* --- BOTONES COMPARTIDOS --- */
 .btn {
-    display: flex; align-items: center; justify-content: center;
-    width: 100%; padding: 14px; border: none; border-radius: 12px;
-    font-size: 1rem; font-weight: 600; cursor: pointer; transition: 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.1s ease, background 0.3s;
+    margin-top: 20px;
 }
-.btn:active { transform: scale(0.98); }
 
-.btn-primary { background: var(--accent); color: white; margin-top: 15px; }
-.btn-primary:hover { background: var(--accent-hover); }
+.btn:active {
+    transform: scale(0.98);
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: white;
+    margin-top: 15px;
+}
+
+.btn-primary:hover {
+    background: var(--accent-hover);
+}
 
 .btn-secondary {
-    background: transparent; color: var(--accent);
-    border: 2px solid var(--accent); margin-top: 20px;
+    background: transparent;
+    color: var(--accent);
+    border: 2px solid var(--accent);
+    box-shadow: none;
 }
-.btn-secondary:hover { background: rgba(59, 130, 246, 0.1); }
 
-.btn-success { background: var(--success); color: white; margin-top: 20px;}
-.btn-success:hover { background: #059669; }
+.btn-secondary:hover {
+    background: rgba(59, 130, 246, 0.1);
+}
 
+/* Botón verde para descargar/enviar el reporte final */
+.btn-success {
+    background: var(--success);
+    color: white;
+}
 
-/* --- LOADER --- */
+.btn-success:hover {
+    background: #059669;
+}
+
+/* Loader animado para botones o búsquedas */
 .loader {
-    border: 3px solid var(--border-color); border-top: 3px solid var(--accent);
-    border-radius: 50%; width: 30px; height: 30px;
-    animation: spin 1s linear infinite; margin: 0 auto;
+    border: 3px solid var(--border-color);
+    border-top: 3px solid var(--accent);
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
 }
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
