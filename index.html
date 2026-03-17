@@ -1,50 +1,63 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover">
     <title>Lector de Equipos - Hydrovec</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-<div class="app-container">
-    <div id="seccion-escaner" class="pantalla-completa">
-        
-        <div id="reader"></div>
+    <div class="app-container">
+        <div id="seccion-escaner" class="pantalla-completa">
 
-        <div class="ui-overlay">
-            <h1 class="titulo-flotante">Hydrovec Scanner</h1>
-            
-            <div class="marco-escaner">
-                <div class="esquina top-left"></div>
-                <div class="esquina top-right"></div>
-                <div class="esquina bottom-left"></div>
-                <div class="esquina bottom-right"></div>
-                <div class="laser"></div>
+            <div id="reader"></div>
+
+            <div class="ui-overlay">
+                <h1 class="titulo-flotante">Hydrovec Scanner</h1>
+
+                <div class="marco-escaner">
+                    <div class="esquina top-left"></div>
+                    <div class="esquina top-right"></div>
+                    <div class="esquina bottom-left"></div>
+                    <div class="esquina bottom-right"></div>
+                    <div class="laser"></div>
+                </div>
+
+                <div id="contenedor-zoom" class="control-zoom" style="display: none;">
+                    <span>−</span>
+                    <input type="range" id="slider-zoom" min="1" max="5" step="0.1" value="1">
+                    <span>+</span>
+                </div>
+
+                <p class="texto-inferior">Apunta al código QR para leer la ficha técnica</p>
             </div>
+        </div>
 
-            <div id="contenedor-zoom" class="control-zoom" style="display: none;">
-                <span>−</span>
-                <input type="range" id="slider-zoom" min="1" max="5" step="0.1" value="1">
-                <span>+</span>
-            </div>
+        <div id="resultado" class="bottom-sheet" style="display: none;">
+            <div class="indicador-arrastre"></div>
+            <div id="datos-ficha"></div>
+            <button id="btn-guardar" class="btn btn-secondary" onclick="guardarReporte()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                    <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+                Guardar Reporte
+            </button>
 
-            <p class="texto-inferior">Apunta al código QR para leer la ficha técnica</p>
+            <button class="btn btn-primary" onclick="reiniciarEscaner()">
+                Escanear de nuevo
+            </button>
         </div>
     </div>
 
-    <div id="resultado" class="bottom-sheet" style="display: none;">
-        <div class="indicador-arrastre"></div>
-        <div id="datos-ficha"></div>
-        <button class="btn btn-primary" onclick="reiniciarEscaner()">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
-            Escanear de nuevo
-        </button>
-    </div>
-</div>
-
-<script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
+
 </html>

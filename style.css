@@ -298,3 +298,20 @@ body {
     font-weight: 500;
     text-align: right;
 }
+
+.btn-secondary {
+    background: transparent;
+    color: var(--accent);
+    border: 2px solid var(--accent);
+    box-shadow: none;
+    margin-top: 20px;
+}
+
+.btn-secondary:hover {
+    background: rgba(59, 130, 246, 0.1); /* Un fondo azul translúcido sutil */
+}
+
+/* Reducimos el margen del botón primario para que agrupen bien */
+.btn-primary {
+    margin-top: 15px; 
+}
