@@ -11,40 +11,40 @@ window.onload = () => {
 
 function arrancarCamara() {
     // Configuramos a 15 fps sin qrbox (lo hacemos con CSS)
-    const config = { fps: 15, disableFlip: false }; 
+    const config = { fps: 15, disableFlip: false };
 
     html5QrCode.start(
-        { facingMode: "environment" }, 
-        config, 
+        { facingMode: "environment" },
+        config,
         alEscanearExito,
-        () => {} // Ignorar errores silenciosos (cuando no lee nada)
+        () => { } // Ignorar errores silenciosos (cuando no lee nada)
     )
-    .then(() => {
-        // --- LÓGICA DE ZOOM ---
-        habilitarZoom();
-    })
-    .catch(err => {
-        console.error("Error de cámara:", err);
-        mostrarError("Error al abrir la cámara. Revisa los permisos.");
-    });
+        .then(() => {
+            // --- LÓGICA DE ZOOM ---
+            habilitarZoom();
+        })
+        .catch(err => {
+            console.error("Error de cámara:", err);
+            mostrarError("Error al abrir la cámara. Revisa los permisos.");
+        });
 }
 
 function habilitarZoom() {
     const videoTrack = html5QrCode.getRunningTrackCameraCapabilities();
-    
+
     // Verificamos si la cámara soporta zoom por hardware
     if (videoTrack && videoTrack.zoomFeature() && videoTrack.zoomFeature().isSupported()) {
         const sliderZoom = document.getElementById('slider-zoom');
         const contenedorZoom = document.getElementById('contenedor-zoom');
-        
+
         // Mostrar el slider
         contenedorZoom.style.display = 'flex';
-        
+
         // Ajustar valores del slider a los límites de la cámara
         const minZoom = videoTrack.zoomFeature().min();
         const maxZoom = videoTrack.zoomFeature().max();
         const step = videoTrack.zoomFeature().step();
-        
+
         sliderZoom.min = minZoom;
         sliderZoom.max = maxZoom;
         sliderZoom.step = step;
@@ -86,7 +86,7 @@ async function buscarEnBaseDeDatos(cliente, equipo) {
     const divDatos = document.getElementById('datos-ficha');
 
     divResultado.style.display = 'block';
-    
+
     // Diseño del loader adaptado al Dark Mode
     divDatos.innerHTML = `
         <div style="text-align:center; padding: 20px;">
@@ -135,7 +135,7 @@ function renderizarFicha(encabezados, valores, cliente, equipo) {
 
     encabezadosAMostrar.forEach((nombre, i) => {
         const valor = valores[i];
-        
+
         // Filtramos las columnas que ya usamos y las vacías
         if (valor && valor !== "" && nombre !== "Cliente" && nombre !== "Equipos" && nombre !== "") {
             html += `
@@ -152,7 +152,7 @@ function renderizarFicha(encabezados, valores, cliente, equipo) {
 function mostrarError(mensaje) {
     //document.getElementById('seccion-escaner').style.display = 'none';
     document.getElementById('resultado').style.display = 'block';
-    
+
     // Error adaptado al Dark Mode
     document.getElementById('datos-ficha').innerHTML = `
         <div style="text-align:center; padding:20px;">
@@ -168,13 +168,13 @@ function mostrarError(mensaje) {
 function reiniciarEscaner() {
     // Ocultar el panel de resultados
     document.getElementById('resultado').style.display = 'none';
-    
+
     // Mostrar el contenedor de la cámara
     document.getElementById('seccion-escaner').style.display = 'block';
-    
+
     // Limpiar el contenido anterior de la ficha
     document.getElementById('datos-ficha').innerHTML = '';
-    
+
     // Como detuvimos la cámara en alEscanearExito, la volvemos a arrancar
     arrancarCamara();
 }
