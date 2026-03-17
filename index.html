@@ -38,21 +38,18 @@
             </div>
         </div>
 
-        <div id="resultado" class="bottom-sheet" style="display: none;">
-            <div class="indicador-arrastre"></div>
-            <div id="datos-ficha"></div>
-            <button id="btn-guardar" class="btn btn-secondary" onclick="guardarReporte()">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;">
-                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                    <polyline points="7 3 7 8 15 8"></polyline>
-                </svg>
-                Guardar Reporte
+        <div id="vista-formulario" style="display: none;">
+            <h3 style="color: var(--text-main); text-align: center; margin-bottom: 15px;">Cargar Datos</h3>
+
+            <div id="contenedor-inputs"></div>
+
+            <button class="btn btn-success" onclick="guardarReporte()" style="margin-top: 20px;">
+                💾 Guardar Reporte
             </button>
 
-            <button class="btn btn-primary" onclick="reiniciarEscaner()">
-                Escanear de nuevo
+            <button class="btn btn-secondary" onclick="cancelarFormulario()"
+                style="margin-top: 10px; border-color: var(--text-muted); color: var(--text-muted);">
+                Cancelar
             </button>
         </div>
     </div>
