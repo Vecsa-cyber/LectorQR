@@ -52,8 +52,8 @@ function habilitarZoom() {
 }
 
 function alEscanearExito(textoDecodificado) {
-    // Te avisará si el QR se leyó correctamente
-    alert("QR Detectado: " + textoDecodificado); 
+    // Te avisará si el QR se leyó correctamente (Puedes borrar este alert después de tus pruebas)
+    //alert("QR Detectado: " + textoDecodificado); 
 
     html5QrCode.stop().then(() => {
         const partes = textoDecodificado.split('|');
@@ -73,7 +73,6 @@ async function buscarEnBaseDeDatos(cliente, equipo) {
         const divResultado = document.getElementById('resultado');
         const divDatos = document.getElementById('datos-ficha');
 
-        // Si falta algo en el HTML, esto nos avisará
         if (!document.getElementById('vista-formulario')) {
             alert("FALTA EN EL HTML: No encuentro el id 'vista-formulario'");
             return;
@@ -93,9 +92,8 @@ async function buscarEnBaseDeDatos(cliente, equipo) {
         const respuesta = await fetch(URL_CSV);
         const datosCSV = await respuesta.text();
         
-        // Si Sheets nos mandó un HTML de error en vez de un CSV, lo atrapamos aquí
         if (datosCSV.includes("<!DOCTYPE html>") || datosCSV.includes("<html")) {
-            alert("ERROR DE PERMISOS: Google Sheets bloqueó la descarga. Asegúrate de que el archivo sea 'Público para cualquier usuario con el enlace'.");
+            alert("ERROR DE PERMISOS: Google Sheets bloqueó la descarga.");
             mostrarError("Error de permisos en Base de Datos.");
             return;
         }
@@ -115,19 +113,16 @@ async function buscarEnBaseDeDatos(cliente, equipo) {
             mostrarError(`No se encontró el equipo <b>${equipo}</b> del cliente <b>${cliente}</b>.`);
         }
     } catch (error) {
-        // Esta es la red de seguridad principal
         alert("CRASH EN EL CÓDIGO: " + error.message);
         mostrarError("Error interno: " + error.message);
     }
 }
 
-// Función auxiliar para obtener datos exactos manejando errores
 function getVal(col) {
     const idx = headersGlobales.indexOf(col);
     return (idx !== -1 && valoresGlobales[idx] && valoresGlobales[idx] !== "") ? valoresGlobales[idx] : "N/A";
 }
 
-// Renderiza la primera vista (Resumen del equipo)
 function renderizarFicha() {
     let html = `
         <div style="background: var(--bg-color); padding:15px; border-radius:12px; margin-bottom:20px; text-align:center; border: 1px solid var(--border-color);">
@@ -154,11 +149,9 @@ function abrirFormulario() {
 
     let htmlCampos = "";
 
-    // Ciclo para los 47 parámetros
     for (let i = 1; i <= 47; i++) {
         const param = getVal(`Parametro${i}`);
         
-        // Si la columna Parametro existe y no está vacía
         if (param !== "N/A" && param !== "") {
             const subEquipo = getVal(`Equipo${i}`);
             const punto = getVal(`PuntoMuestro${i}`);
@@ -166,11 +159,11 @@ function abrirFormulario() {
             const limInf = getVal(`LimiteInferior${i}`);
             const limSup = getVal(`LimiteSuperior${i}`);
 
-            // Construimos los textos según lo solicitado
             const textoPrincipal = `${subEquipo !== "N/A" ? subEquipo : equipoActual}, ${param}`;
             const unidadStr = unidad !== "N/A" ? unidad : "";
             const textoSubtitulo = `(${punto !== "N/A" ? punto : "Sin punto especificado"}, ${limInf} a ${limSup} ${unidadStr})`;
 
+            // Se agregó display:block y estilos neutrales al textarea para que nazca visible
             htmlCampos += `
                 <div class="form-group" id="grupo_${i}">
                     <label class="form-label">${textoPrincipal}</label>
@@ -182,7 +175,10 @@ function abrirFormulario() {
                            oninput="validarLimites(this, ${i})">
                     
                     <div class="form-warning-text" id="alerta_${i}">⚠️ Valor fuera de rango. Se requiere justificación:</div>
-                    <textarea class="form-comentario" id="comentario_${i}" rows="2" placeholder="Escribe por qué el valor está fuera de norma..."></textarea>
+                    
+                    <textarea class="form-comentario" id="comentario_${i}" rows="2" 
+                              placeholder="Observaciones / Justificación (Opcional si el valor es normal)" 
+                              style="display: block; border-color: var(--border-color); background: rgba(15, 23, 42, 0.5);"></textarea>
                 </div>
             `;
         }
@@ -199,11 +195,12 @@ function validarLimites(inputElem, index) {
     const divComentario = document.getElementById(`comentario_${index}`);
     const alerta = document.getElementById(`alerta_${index}`);
 
-    // Si está vacío, resetear
+    // Si el técnico borra el número, regresamos a estado neutral
     if (valorTexto === "") {
-        divComentario.style.display = 'none';
         alerta.style.display = 'none';
         inputElem.style.borderColor = "var(--border-color)";
+        divComentario.style.borderColor = "var(--border-color)";
+        divComentario.style.backgroundColor = "rgba(15, 23, 42, 0.5)";
         return;
     }
 
@@ -218,14 +215,19 @@ function validarLimites(inputElem, index) {
     }
 
     if (fueraDeRango) {
-        divComentario.style.display = 'block';
+        // Fuera de rango: Encendemos la alerta y pintamos el textarea de naranja
         alerta.style.display = 'block';
-        inputElem.style.borderColor = "var(--warning)"; // Naranja alerta
+        inputElem.style.borderColor = "var(--warning)"; 
+        divComentario.style.borderColor = "var(--warning)";
+        divComentario.style.backgroundColor = "rgba(245, 158, 11, 0.1)";
+        divComentario.placeholder = "⚠️ Obligatorio: Escribe la causa de este valor...";
     } else {
-        divComentario.style.display = 'none';
-        divComentario.value = ''; // Limpiar comentario
+        // Dentro de rango: Quitamos alerta y pintamos de verde, pero NO borramos el comentario
         alerta.style.display = 'none';
-        inputElem.style.borderColor = "var(--success)"; // Verde éxito
+        inputElem.style.borderColor = "var(--success)"; 
+        divComentario.style.borderColor = "var(--border-color)";
+        divComentario.style.backgroundColor = "rgba(15, 23, 42, 0.5)";
+        divComentario.placeholder = "Observaciones / Justificación (Opcional si el valor es normal)";
     }
 }
 
@@ -235,7 +237,6 @@ function cancelarFormulario() {
 }
 
 function guardarReporte() {
-    // 1. Validar que los campos fuera de rango tengan comentario
     let formularioValido = true;
     let hayDatosCapturados = false;
 
@@ -244,6 +245,7 @@ function guardarReporte() {
         
         if (inputElem) {
             const valor = inputElem.value.trim();
+            // La alerta visible es nuestro semáforo de que el comentario es OBLIGATORIO
             const alertaVisible = document.getElementById(`alerta_${i}`).style.display === 'block';
             const comentario = document.getElementById(`comentario_${i}`).value.trim();
 
@@ -266,16 +268,13 @@ function guardarReporte() {
         return;
     }
 
-    // 2. Simular el guardado en base de datos
     const btnGuardar = document.querySelector('.btn-success');
     const textoOriginal = btnGuardar.innerHTML;
     
     btnGuardar.innerHTML = `<div class="loader" style="width: 15px; height: 15px; border-width: 2px; margin: 0 10px 0 0; display: inline-block; vertical-align: middle;"></div> Procesando...`;
     btnGuardar.disabled = true;
 
-    // Simulamos un retraso de red de 1.5 segundos
     setTimeout(() => {
-        // Confirmación visual
         btnGuardar.innerHTML = `✅ Datos Cargados Correctamente`;
         btnGuardar.style.backgroundColor = "var(--success)";
         btnGuardar.style.borderColor = "var(--success)";
@@ -283,7 +282,6 @@ function guardarReporte() {
         setTimeout(() => {
             btnGuardar.innerHTML = textoOriginal;
             btnGuardar.disabled = false;
-            // Ocultamos el formulario y regresamos a la cámara
             reiniciarEscaner();
             alert("Los datos se han guardado con éxito. (Modo Simulación)");
         }, 2000);
