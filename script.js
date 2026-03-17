@@ -52,34 +52,53 @@ function habilitarZoom() {
 }
 
 function alEscanearExito(textoDecodificado) {
+    // Te avisará si el QR se leyó correctamente
+    alert("QR Detectado: " + textoDecodificado); 
+
     html5QrCode.stop().then(() => {
         const partes = textoDecodificado.split('|');
         if (partes.length === 2) {
             buscarEnBaseDeDatos(partes[0].trim(), partes[1].trim());
         } else {
+            alert("Error: El QR no tiene el formato Cliente|Equipo. Tiene " + partes.length + " partes.");
             mostrarError("QR inválido. Formato esperado: Cliente|Equipo.");
         }
+    }).catch(err => {
+        alert("Error al detener cámara: " + err.message);
     });
 }
 
 async function buscarEnBaseDeDatos(cliente, equipo) {
-    const divResultado = document.getElementById('resultado');
-    const divDatos = document.getElementById('datos-ficha');
-
-    document.getElementById('vista-formulario').style.display = 'none';
-    document.getElementById('vista-ficha').style.display = 'block';
-    
-    divResultado.style.display = 'block';
-    divDatos.innerHTML = `
-        <div style="text-align:center; padding: 20px;">
-            <div class="loader"></div>
-            <p style="color: var(--text-muted); margin-top: 10px;">Consultando base de datos...</p>
-        </div>
-    `;
-
     try {
+        const divResultado = document.getElementById('resultado');
+        const divDatos = document.getElementById('datos-ficha');
+
+        // Si falta algo en el HTML, esto nos avisará
+        if (!document.getElementById('vista-formulario')) {
+            alert("FALTA EN EL HTML: No encuentro el id 'vista-formulario'");
+            return;
+        }
+
+        document.getElementById('vista-formulario').style.display = 'none';
+        document.getElementById('vista-ficha').style.display = 'block';
+        
+        divResultado.style.display = 'block';
+        divDatos.innerHTML = `
+            <div style="text-align:center; padding: 20px;">
+                <div class="loader"></div>
+                <p style="color: var(--text-muted); margin-top: 10px;">Consultando base de datos...</p>
+            </div>
+        `;
+
         const respuesta = await fetch(URL_CSV);
         const datosCSV = await respuesta.text();
+        
+        // Si Sheets nos mandó un HTML de error en vez de un CSV, lo atrapamos aquí
+        if (datosCSV.includes("<!DOCTYPE html>") || datosCSV.includes("<html")) {
+            alert("ERROR DE PERMISOS: Google Sheets bloqueó la descarga. Asegúrate de que el archivo sea 'Público para cualquier usuario con el enlace'.");
+            mostrarError("Error de permisos en Base de Datos.");
+            return;
+        }
 
         const filas = datosCSV.split("\n").map(f => f.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/"/g, "").trim()));
         const encabezados = filas[0];
@@ -96,7 +115,9 @@ async function buscarEnBaseDeDatos(cliente, equipo) {
             mostrarError(`No se encontró el equipo <b>${equipo}</b> del cliente <b>${cliente}</b>.`);
         }
     } catch (error) {
-        mostrarError("No se pudo conectar con el servidor de Google Sheets.");
+        // Esta es la red de seguridad principal
+        alert("CRASH EN EL CÓDIGO: " + error.message);
+        mostrarError("Error interno: " + error.message);
     }
 }
 
