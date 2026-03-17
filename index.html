@@ -3,8 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, viewport-fit=cover">
     <title>Lector de Equipos - Hydrovec</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <link rel="stylesheet" href="style.css">
@@ -14,7 +13,6 @@
 
     <div class="app-container">
         <div id="seccion-escaner" class="pantalla-completa">
-
             <div id="reader"></div>
 
             <div class="ui-overlay">
@@ -38,18 +36,41 @@
             </div>
         </div>
 
-        <div id="vista-formulario" style="display: none;">
-            <h3 style="color: var(--text-main); text-align: center; margin-bottom: 15px;">Cargar Datos</h3>
+        <div id="resultado" class="bottom-sheet" style="display: none;">
+            <div class="indicador-arrastre"></div>
+            
+            <div id="vista-ficha">
+                <div id="datos-ficha"></div>
+                
+                <button id="btn-abrir-formulario" class="btn btn-secondary" onclick="abrirFormulario()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    Cargar Datos
+                </button>
+            </div>
 
-            <div id="contenedor-inputs"></div>
+            <div id="vista-formulario" style="display: none;">
+                <h3 style="color: var(--text-main); text-align: center; margin-bottom: 15px;">Captura de Parámetros</h3>
+                
+                <div id="contenedor-inputs"></div>
 
-            <button class="btn btn-success" onclick="guardarReporte()" style="margin-top: 20px;">
-                💾 Guardar Reporte
-            </button>
+                <button class="btn btn-success" onclick="guardarReporte()" style="margin-top: 20px;">
+                    💾 Guardar Reporte
+                </button>
+                
+                <button class="btn btn-secondary" onclick="cancelarFormulario()" style="margin-top: 10px; border-color: var(--text-muted); color: var(--text-muted);">
+                    Cancelar
+                </button>
+            </div>
 
-            <button class="btn btn-secondary" onclick="cancelarFormulario()"
-                style="margin-top: 10px; border-color: var(--text-muted); color: var(--text-muted);">
-                Cancelar
+            <button class="btn btn-primary" onclick="reiniciarEscaner()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                    <circle cx="12" cy="13" r="4"></circle>
+                </svg>
+                Escanear de nuevo
             </button>
         </div>
     </div>
