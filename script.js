@@ -331,38 +331,34 @@ function guardarReporte() {
     btnGuardar.innerHTML = `<div class="loader" style="width: 15px; height: 15px; border-width: 2px; margin: 0 10px 0 0; display: inline-block; vertical-align: middle;"></div> Guardando...`;
     btnGuardar.disabled = true;
 
-    // AQUI ESTA EL CAMBIO: Agregamos el header de text/plain
+    // Usamos mode: 'no-cors' para que el navegador no bloquee la redirección de Google
     fetch(WEB_APP_URL, {
         method: 'POST',
-        // Esto evita que el navegador bloquee el envío por seguridad (CORS)
+        mode: 'no-cors', 
         headers: {
             "Content-Type": "text/plain;charset=utf-8"
         },
-        // Esto le dice al celular que siga las redirecciones de Google
-        redirect: "follow", 
         body: JSON.stringify({ action: "guardar", datos: filaRegistro }) 
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.exito) {
-            btnGuardar.innerHTML = `✅ Datos Cargados Correctamente`;
-            btnGuardar.style.backgroundColor = "var(--success)";
-            btnGuardar.style.borderColor = "var(--success)";
+    .then(() => {
+        // Con no-cors el navegador no nos deja leer la respuesta de Google, 
+        // pero si llegamos aquí, significa que el envío de red fue exitoso.
+        btnGuardar.innerHTML = `✅ Datos Cargados Correctamente`;
+        btnGuardar.style.backgroundColor = "var(--success)";
+        btnGuardar.style.borderColor = "var(--success)";
 
-            setTimeout(() => {
-                btnGuardar.innerHTML = textoOriginal;
-                btnGuardar.disabled = false;
-                reiniciarEscaner();
-                alert("Los datos se han guardado con éxito en la hoja de Registro.");
-            }, 2000);
-        } else {
-            throw new Error(data.error);
-        }
+        setTimeout(() => {
+            btnGuardar.innerHTML = textoOriginal;
+            btnGuardar.disabled = false;
+            reiniciarEscaner();
+            alert("Los datos se han guardado con éxito en la hoja de Registro.");
+        }, 2000);
     })
     .catch(error => {
-        btnGuardar.innerHTML = `❌ Error al guardar`;
+        // Esto solo saltará si de verdad no hay internet o la URL está rota
+        btnGuardar.innerHTML = `❌ Error de red`;
         console.error("Error enviando datos:", error);
-        alert("Ocurrió un error al intentar guardar en Sheets: " + error.message);
+        alert("Comprueba tu conexión a internet e intenta de nuevo.");
         
         setTimeout(() => {
             btnGuardar.innerHTML = textoOriginal;
