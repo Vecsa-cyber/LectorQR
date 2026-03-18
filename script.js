@@ -371,6 +371,110 @@ function guardarReporte() {
         });
 }
 
+// --- NUEVAS FUNCIONES PARA EL HISTORIAL ---
+
+async function consultarHistorial() {
+    // Ocultar ficha y mostrar/crear la vista de historial
+    document.getElementById('vista-ficha').style.display = 'none';
+    
+    let vistaHistorial = document.getElementById('vista-historial');
+    vistaHistorial.style.display = 'block';
+    
+    // Loader
+    vistaHistorial.innerHTML = `
+        <div style="text-align:center; padding: 20px;">
+            <div class="loader"></div>
+            <p style="color: var(--text-muted); margin-top: 10px;">Buscando registros anteriores...</p>
+        </div>
+    `;
+
+    try {
+        // Usamos el mismo truco CSV pero apuntando a la pestaña "Registro"
+        const URL_REGISTRO = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Registro&t=${new Date().getTime()}`;
+        const respuesta = await fetch(URL_REGISTRO);
+        const datosCSV = await respuesta.text();
+
+        if (datosCSV.includes("<!DOCTYPE html>")) {
+            throw new Error("No hay permisos públicos para leer la hoja Registro.");
+        }
+
+        const filas = datosCSV.split("\n").map(f => f.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/"/g, "").trim()));
+        const encabezados = filas[0];
+
+        const idxCliente = encabezados.indexOf("Cliente");
+        const idxEquipo = encabezados.indexOf("Equipo"); // Nota: en esta hoja se llama "Equipo", no "Equipos"
+        const idxFecha = encabezados.indexOf("Fecha");
+
+        // Filtrar historial (Ignoramos la fila 0 de encabezados)
+        const historial = filas.filter((f, i) => i > 0 && f[idxCliente] === clienteActual && f[idxEquipo] === equipoActual);
+
+        if (historial.length === 0) {
+            vistaHistorial.innerHTML = `
+                <h3 style="text-align:center; color: var(--text-main); margin-bottom:15px;">Historial de ${equipoActual}</h3>
+                <div style="text-align:center; padding: 20px; background: rgba(15, 23, 42, 0.5); border-radius: 12px; margin-bottom: 20px;">
+                    <p style="color: var(--text-muted);">No hay reportes anteriores registrados para este equipo.</p>
+                </div>
+                <button class="btn btn-secondary" onclick="cerrarHistorial()">Volver a la Ficha</button>
+            `;
+            return;
+        }
+
+        // Si hay historial, armamos el HTML
+        let html = `<h3 style="text-align:center; color: var(--text-main); margin-bottom:15px;">Historial de ${equipoActual}</h3>`;
+
+        // Mostramos los reportes encontrados
+        historial.forEach(registro => {
+            html += `
+            <div style="background: rgba(15, 23, 42, 0.5); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid var(--border-color);">
+                <h4 style="color: var(--accent); margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">
+                    📅 Fecha: ${registro[idxFecha]}
+                </h4>`;
+            
+            // Recorremos los 47 parámetros para ver cuáles se llenaron en ese reporte
+            for(let i = 1; i <= 47; i++) {
+                let idxParam = encabezados.indexOf(`Parametro${i}`);
+                let idxRes = encabezados.indexOf(`Resultado${i}`);
+                let idxUni = encabezados.indexOf(`Unidad${i}`);
+                let idxLimInf = encabezados.indexOf(`LimiteInferior${i}`);
+                let idxLimSup = encabezados.indexOf(`LimiteSuperior${i}`);
+                
+                if(idxParam !== -1 && idxRes !== -1 && registro[idxParam] && registro[idxParam] !== "N/A" && registro[idxParam] !== "") {
+                    let resultado = registro[idxRes];
+                    let unidad = registro[idxUni] !== "N/A" ? registro[idxUni] : "";
+                    let limInf = registro[idxLimInf] !== "N/A" ? registro[idxLimInf] : "";
+                    let limSup = registro[idxLimSup] !== "N/A" ? registro[idxLimSup] : "";
+                    
+                    if (resultado && resultado !== "") {
+                        html += `
+                        <div style="margin-bottom:8px; font-size: 0.9rem;">
+                            <div style="color: var(--text-muted);">${registro[idxParam]} <span style="font-size: 0.75rem; opacity: 0.7;">(Rango: ${limInf} - ${limSup})</span></div>
+                            <div style="color: var(--text-main); font-weight: 600; text-align: right;">${resultado} ${unidad}</div>
+                        </div>`;
+                    }
+                }
+            }
+            html += `</div>`;
+        });
+
+        html += `<button class="btn btn-secondary" onclick="cerrarHistorial()">Volver a la Ficha</button>`;
+        vistaHistorial.innerHTML = html;
+
+    } catch (error) {
+        vistaHistorial.innerHTML = `
+            <div style="text-align:center; padding: 20px; color: #ef4444;">
+                <p>Error al cargar historial: ${error.message}</p>
+            </div>
+            <button class="btn btn-secondary" onclick="cerrarHistorial()">Volver</button>
+        `;
+    }
+}
+
+function cerrarHistorial() {
+    document.getElementById('vista-historial').style.display = 'none';
+    document.getElementById('vista-ficha').style.display = 'block';
+}
+
+
 function mostrarError(mensaje) {
     document.getElementById('resultado').style.display = 'block';
     document.getElementById('datos-ficha').innerHTML = `
@@ -384,10 +488,13 @@ function mostrarError(mensaje) {
     `;
 }
 
+
+
 function reiniciarEscaner() {
     document.getElementById('vista-formulario').style.display = 'none';
     document.getElementById('vista-ficha').style.display = 'block';
     document.getElementById('resultado').style.display = 'none';
     document.getElementById('datos-ficha').innerHTML = '';
+    document.getElementById('vista-historial').style.display = 'none'; // <-- Agrega esta línea
     arrancarCamara();
 }
