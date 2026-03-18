@@ -1,4 +1,4 @@
-const SHEET_ID = '1c6oCi27Vneu7y7GsOxDszICAunDAqegFrMqA_cVnRsQ';
+const SHEET_ID = '1fQ0l_OKBQn8BiYsrld4CVfc0nLjqnapxFAu5h0fUiDiV07PoJcfWHFia';
 const URL_CSV = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=BASEDATOS`;
 
 let html5QrCode;
@@ -236,16 +236,19 @@ function cancelarFormulario() {
     document.getElementById('vista-ficha').style.display = 'block';
 }
 
+// Asegúrate de poner aquí la URL que te dé Google Apps Script (lo haremos en el Paso 2)
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyKbJNA3bNISvAFiKcjdqqNIRKD3Sx4U8oonrNlEL6mH7tBsH0Db4h1V7bYx6-lMJ4/exec"; 
+
 function guardarReporte() {
     let formularioValido = true;
     let hayDatosCapturados = false;
 
+    // 1. Validar que los campos fuera de rango tengan comentario (Igual que antes)
     for (let i = 1; i <= 47; i++) {
         const inputElem = document.getElementById(`resultado_${i}`);
         
         if (inputElem) {
             const valor = inputElem.value.trim();
-            // La alerta visible es nuestro semáforo de que el comentario es OBLIGATORIO
             const alertaVisible = document.getElementById(`alerta_${i}`).style.display === 'block';
             const comentario = document.getElementById(`comentario_${i}`).value.trim();
 
@@ -268,25 +271,98 @@ function guardarReporte() {
         return;
     }
 
+    // =========================================================
+    // 2. CONSTRUIR EL ARREGLO EXACTO PARA LA HOJA "REGISTRO"
+    // =========================================================
+    
+    // Generar Fecha Automática
+    const fechaActual = new Date().toLocaleString('es-MX');
+
+    // Mapeo de las primeras 10 columnas fijas
+    let filaRegistro = [
+        fechaActual,
+        clienteActual,
+        equipoActual,
+        getVal('# Activo'),
+        "REP-" + new Date().getTime(), // Generamos un Folio Reporte automático único
+        getVal('Folio Checklist'),
+        getVal('Comercial') !== "N/A" ? getVal('Comercial') : getVal('Ejecutivo Comercial'), 
+        getVal('Tecnico Responsable'),
+        getVal('Nombre Usuario'),
+        getVal('Correo Elctronico Usuario') !== "N/A" ? getVal('Correo Elctronico Usuario') : getVal('Correo Electronico Usuario')
+    ];
+
+    // Mapeo de los 47 parámetros (9 columnas por cada uno)
+    for (let i = 1; i <= 47; i++) {
+        const inputElem = document.getElementById(`resultado_${i}`);
+        
+        // Si el input se generó en la pantalla (porque existe el parámetro)
+        if (inputElem) {
+            const resultadoCapturado = inputElem.value.trim();
+            const comentarioCapturado = document.getElementById(`comentario_${i}`).value.trim();
+
+            filaRegistro.push(
+                getVal(`Parametro${i}`),
+                getVal(`PuntoMuestro${i}`),
+                getVal(`Equipo${i}`),
+                getVal(`Unidad${i}`),
+                resultadoCapturado, // Resultado1, Resultado2, etc.
+                comentarioCapturado, // Comentarios1, Comentarios2, etc.
+                getVal(`LimiteInferior${i}`),
+                getVal(`LimiteSuperior${i}`),
+                getVal(`TipoParametro${i}`)
+            );
+        } else {
+            // Si el parámetro no existe (ej. el equipo solo tiene 10 parámetros),
+            // llenamos las 9 celdas con espacios vacíos para no desfasar las columnas en Excel
+            filaRegistro.push("", "", "", "", "", "", "", "", "");
+        }
+    }
+
+    // Mapeo de las últimas 4 columnas ('O1', 'O2', 'O3', 'O4')
+    filaRegistro.push("", "", "", "");
+
+    // =========================================================
+    // 3. ENVIAR LOS DATOS A GOOGLE APPS SCRIPT
+    // =========================================================
     const btnGuardar = document.querySelector('.btn-success');
     const textoOriginal = btnGuardar.innerHTML;
     
-    btnGuardar.innerHTML = `<div class="loader" style="width: 15px; height: 15px; border-width: 2px; margin: 0 10px 0 0; display: inline-block; vertical-align: middle;"></div> Procesando...`;
+    btnGuardar.innerHTML = `<div class="loader" style="width: 15px; height: 15px; border-width: 2px; margin: 0 10px 0 0; display: inline-block; vertical-align: middle;"></div> Guardando...`;
     btnGuardar.disabled = true;
 
-    setTimeout(() => {
-        btnGuardar.innerHTML = `✅ Datos Cargados Correctamente`;
-        btnGuardar.style.backgroundColor = "var(--success)";
-        btnGuardar.style.borderColor = "var(--success)";
+    fetch(WEB_APP_URL, {
+        method: 'POST',
+        // Enviamos el arreglo envuelto en un JSON
+        body: JSON.stringify({ action: "guardar", datos: filaRegistro }) 
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.exito) {
+            btnGuardar.innerHTML = `✅ Datos Cargados Correctamente`;
+            btnGuardar.style.backgroundColor = "var(--success)";
+            btnGuardar.style.borderColor = "var(--success)";
 
+            setTimeout(() => {
+                btnGuardar.innerHTML = textoOriginal;
+                btnGuardar.disabled = false;
+                reiniciarEscaner();
+                alert("Los datos se han guardado con éxito en la hoja de Registro.");
+            }, 2000);
+        } else {
+            throw new Error(data.error);
+        }
+    })
+    .catch(error => {
+        btnGuardar.innerHTML = `❌ Error al guardar`;
+        console.error("Error enviando datos:", error);
+        alert("Ocurrió un error al intentar guardar en Sheets: " + error.message);
+        
         setTimeout(() => {
             btnGuardar.innerHTML = textoOriginal;
             btnGuardar.disabled = false;
-            reiniciarEscaner();
-            alert("Los datos se han guardado con éxito. (Modo Simulación)");
-        }, 2000);
-        
-    }, 1500); 
+        }, 3000);
+    });
 }
 
 function mostrarError(mensaje) {
