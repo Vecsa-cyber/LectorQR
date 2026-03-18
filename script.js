@@ -14,19 +14,19 @@ window.onload = () => {
 };
 
 function arrancarCamara() {
-    const config = { fps: 15, disableFlip: false }; 
+    const config = { fps: 15, disableFlip: false };
 
     html5QrCode.start(
-        { facingMode: "environment" }, 
-        config, 
+        { facingMode: "environment" },
+        config,
         alEscanearExito,
-        () => {} // Ignorar errores silenciosos
+        () => { } // Ignorar errores silenciosos
     )
-    .then(() => habilitarZoom())
-    .catch(err => {
-        console.error("Error de cámara:", err);
-        mostrarError("Error al abrir la cámara. Revisa los permisos.");
-    });
+        .then(() => habilitarZoom())
+        .catch(err => {
+            console.error("Error de cámara:", err);
+            mostrarError("Error al abrir la cámara. Revisa los permisos.");
+        });
 }
 
 function habilitarZoom() {
@@ -34,9 +34,9 @@ function habilitarZoom() {
     if (videoTrack && videoTrack.zoomFeature() && videoTrack.zoomFeature().isSupported()) {
         const sliderZoom = document.getElementById('slider-zoom');
         const contenedorZoom = document.getElementById('contenedor-zoom');
-        
+
         contenedorZoom.style.display = 'flex';
-        
+
         const minZoom = videoTrack.zoomFeature().min();
         sliderZoom.min = minZoom;
         sliderZoom.max = videoTrack.zoomFeature().max();
@@ -80,7 +80,7 @@ async function buscarEnBaseDeDatos(cliente, equipo) {
 
         document.getElementById('vista-formulario').style.display = 'none';
         document.getElementById('vista-ficha').style.display = 'block';
-        
+
         divResultado.style.display = 'block';
         divDatos.innerHTML = `
             <div style="text-align:center; padding: 20px;">
@@ -91,7 +91,7 @@ async function buscarEnBaseDeDatos(cliente, equipo) {
 
         const respuesta = await fetch(URL_CSV);
         const datosCSV = await respuesta.text();
-        
+
         if (datosCSV.includes("<!DOCTYPE html>") || datosCSV.includes("<html")) {
             alert("ERROR DE PERMISOS: Google Sheets bloqueó la descarga.");
             mostrarError("Error de permisos en Base de Datos.");
@@ -151,7 +151,7 @@ function abrirFormulario() {
 
     for (let i = 1; i <= 47; i++) {
         const param = getVal(`Parametro${i}`);
-        
+
         if (param !== "N/A" && param !== "") {
             const subEquipo = getVal(`Equipo${i}`);
             const punto = getVal(`PuntoMuestro${i}`);
@@ -183,7 +183,7 @@ function abrirFormulario() {
             `;
         }
     }
-    
+
     document.getElementById('contenedor-inputs').innerHTML = htmlCampos;
 }
 
@@ -191,7 +191,7 @@ function validarLimites(inputElem, index) {
     const valorTexto = inputElem.value.trim();
     const minTexto = inputElem.getAttribute('data-min');
     const maxTexto = inputElem.getAttribute('data-max');
-    
+
     const divComentario = document.getElementById(`comentario_${index}`);
     const alerta = document.getElementById(`alerta_${index}`);
 
@@ -217,14 +217,14 @@ function validarLimites(inputElem, index) {
     if (fueraDeRango) {
         // Fuera de rango: Encendemos la alerta y pintamos el textarea de naranja
         alerta.style.display = 'block';
-        inputElem.style.borderColor = "var(--warning)"; 
+        inputElem.style.borderColor = "var(--warning)";
         divComentario.style.borderColor = "var(--warning)";
         divComentario.style.backgroundColor = "rgba(245, 158, 11, 0.1)";
         divComentario.placeholder = "⚠️ Obligatorio: Escribe la causa de este valor...";
     } else {
         // Dentro de rango: Quitamos alerta y pintamos de verde, pero NO borramos el comentario
         alerta.style.display = 'none';
-        inputElem.style.borderColor = "var(--success)"; 
+        inputElem.style.borderColor = "var(--success)";
         divComentario.style.borderColor = "var(--border-color)";
         divComentario.style.backgroundColor = "rgba(15, 23, 42, 0.5)";
         divComentario.placeholder = "Observaciones / Justificación (Opcional si el valor es normal)";
@@ -237,7 +237,7 @@ function cancelarFormulario() {
 }
 
 // Asegúrate de poner aquí la URL que te dé Google Apps Script (lo haremos en el Paso 2)
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyKbJNA3bNISvAFiKcjdqqNIRKD3Sx4U8oonrNlEL6mH7tBsH0Db4h1V7bYx6-lMJ4/exec"; 
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyKbJNA3bNISvAFiKcjdqqNIRKD3Sx4U8oonrNlEL6mH7tBsH0Db4h1V7bYx6-lMJ4/exec";
 
 function guardarReporte() {
     let formularioValido = true;
@@ -246,7 +246,7 @@ function guardarReporte() {
     // 1. Validar que los campos fuera de rango tengan comentario (Igual que antes)
     for (let i = 1; i <= 47; i++) {
         const inputElem = document.getElementById(`resultado_${i}`);
-        
+
         if (inputElem) {
             const valor = inputElem.value.trim();
             const alertaVisible = document.getElementById(`alerta_${i}`).style.display === 'block';
@@ -257,9 +257,9 @@ function guardarReporte() {
                 if (alertaVisible && comentario === "") {
                     const paramNombre = getVal(`Parametro${i}`);
                     alert(`El parámetro "${paramNombre}" está fuera de límites. Es obligatorio escribir un comentario/justificación.`);
-                    inputElem.focus(); 
+                    inputElem.focus();
                     formularioValido = false;
-                    break; 
+                    break;
                 }
             }
         }
@@ -274,9 +274,13 @@ function guardarReporte() {
     // =========================================================
     // 2. CONSTRUIR EL ARREGLO EXACTO PARA LA HOJA "REGISTRO"
     // =========================================================
-    
-    // Generar Fecha Automática
-    const fechaActual = new Date().toLocaleString('es-MX');
+
+    // Generar Fecha Automática (Formato DD/MM/YYYY)
+    const hoy = new Date();
+    const dia = String(hoy.getDate()).padStart(2, '0');
+    const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+    const anio = hoy.getFullYear();
+    const fechaActual = `${dia}/${mes}/${anio}`;
 
     // Mapeo de las primeras 10 columnas fijas
     let filaRegistro = [
@@ -286,7 +290,7 @@ function guardarReporte() {
         getVal('# Activo'),
         "REP-" + new Date().getTime(), // Generamos un Folio Reporte automático único
         getVal('Folio Checklist'),
-        getVal('Comercial') !== "N/A" ? getVal('Comercial') : getVal('Ejecutivo Comercial'), 
+        getVal('Comercial') !== "N/A" ? getVal('Comercial') : getVal('Ejecutivo Comercial'),
         getVal('Tecnico Responsable'),
         getVal('Nombre Usuario'),
         getVal('Correo Elctronico Usuario') !== "N/A" ? getVal('Correo Elctronico Usuario') : getVal('Correo Electronico Usuario')
@@ -295,7 +299,7 @@ function guardarReporte() {
     // Mapeo de los 47 parámetros (9 columnas por cada uno)
     for (let i = 1; i <= 47; i++) {
         const inputElem = document.getElementById(`resultado_${i}`);
-        
+
         // Si el input se generó en la pantalla (porque existe el parámetro)
         if (inputElem) {
             const resultadoCapturado = inputElem.value.trim();
@@ -327,44 +331,44 @@ function guardarReporte() {
     // =========================================================
     const btnGuardar = document.querySelector('.btn-success');
     const textoOriginal = btnGuardar.innerHTML;
-    
+
     btnGuardar.innerHTML = `<div class="loader" style="width: 15px; height: 15px; border-width: 2px; margin: 0 10px 0 0; display: inline-block; vertical-align: middle;"></div> Guardando...`;
     btnGuardar.disabled = true;
 
     // Usamos mode: 'no-cors' para que el navegador no bloquee la redirección de Google
     fetch(WEB_APP_URL, {
         method: 'POST',
-        mode: 'no-cors', 
+        mode: 'no-cors',
         headers: {
             "Content-Type": "text/plain;charset=utf-8"
         },
-        body: JSON.stringify({ action: "guardar", datos: filaRegistro }) 
+        body: JSON.stringify({ action: "guardar", datos: filaRegistro })
     })
-    .then(() => {
-        // Con no-cors el navegador no nos deja leer la respuesta de Google, 
-        // pero si llegamos aquí, significa que el envío de red fue exitoso.
-        btnGuardar.innerHTML = `✅ Datos Cargados Correctamente`;
-        btnGuardar.style.backgroundColor = "var(--success)";
-        btnGuardar.style.borderColor = "var(--success)";
+        .then(() => {
+            // Con no-cors el navegador no nos deja leer la respuesta de Google, 
+            // pero si llegamos aquí, significa que el envío de red fue exitoso.
+            btnGuardar.innerHTML = `✅ Datos Cargados Correctamente`;
+            btnGuardar.style.backgroundColor = "var(--success)";
+            btnGuardar.style.borderColor = "var(--success)";
 
-        setTimeout(() => {
-            btnGuardar.innerHTML = textoOriginal;
-            btnGuardar.disabled = false;
-            reiniciarEscaner();
-            alert("Los datos se han guardado con éxito en la hoja de Registro.");
-        }, 2000);
-    })
-    .catch(error => {
-        // Esto solo saltará si de verdad no hay internet o la URL está rota
-        btnGuardar.innerHTML = `❌ Error de red`;
-        console.error("Error enviando datos:", error);
-        alert("Comprueba tu conexión a internet e intenta de nuevo.");
-        
-        setTimeout(() => {
-            btnGuardar.innerHTML = textoOriginal;
-            btnGuardar.disabled = false;
-        }, 3000);
-    });
+            setTimeout(() => {
+                btnGuardar.innerHTML = textoOriginal;
+                btnGuardar.disabled = false;
+                reiniciarEscaner();
+                alert("Los datos se han guardado con éxito en la hoja de Registro.");
+            }, 2000);
+        })
+        .catch(error => {
+            // Esto solo saltará si de verdad no hay internet o la URL está rota
+            btnGuardar.innerHTML = `❌ Error de red`;
+            console.error("Error enviando datos:", error);
+            alert("Comprueba tu conexión a internet e intenta de nuevo.");
+
+            setTimeout(() => {
+                btnGuardar.innerHTML = textoOriginal;
+                btnGuardar.disabled = false;
+            }, 3000);
+        });
 }
 
 function mostrarError(mensaje) {
