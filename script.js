@@ -331,9 +331,12 @@ function guardarReporte() {
     btnGuardar.innerHTML = `<div class="loader" style="width: 15px; height: 15px; border-width: 2px; margin: 0 10px 0 0; display: inline-block; vertical-align: middle;"></div> Guardando...`;
     btnGuardar.disabled = true;
 
+    // AQUI ESTA EL CAMBIO: Agregamos el header de text/plain
     fetch(WEB_APP_URL, {
         method: 'POST',
-        // Enviamos el arreglo envuelto en un JSON
+        headers: {
+            "Content-Type": "text/plain;charset=utf-8"
+        },
         body: JSON.stringify({ action: "guardar", datos: filaRegistro }) 
     })
     .then(response => response.json())
