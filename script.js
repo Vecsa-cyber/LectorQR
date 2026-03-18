@@ -334,9 +334,12 @@ function guardarReporte() {
     // AQUI ESTA EL CAMBIO: Agregamos el header de text/plain
     fetch(WEB_APP_URL, {
         method: 'POST',
+        // Esto evita que el navegador bloquee el envío por seguridad (CORS)
         headers: {
             "Content-Type": "text/plain;charset=utf-8"
         },
+        // Esto le dice al celular que siga las redirecciones de Google
+        redirect: "follow", 
         body: JSON.stringify({ action: "guardar", datos: filaRegistro }) 
     })
     .then(response => response.json())
