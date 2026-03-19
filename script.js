@@ -371,10 +371,9 @@ function guardarReporte() {
         });
 }
 
-// --- NUEVAS FUNCIONES PARA EL HISTORIAL ---
+// --- NUEVAS FUNCIONES PARA EL HISTORIAL (VERSIÓN BLINDADA POR POSICIONES) ---
 
 async function consultarHistorial() {
-    // 1. Expandir la vista a casi toda la pantalla y mostrar historial
     const divResultado = document.getElementById('resultado');
     divResultado.style.height = '95dvh'; 
     divResultado.style.maxHeight = '95dvh';
@@ -400,13 +399,13 @@ async function consultarHistorial() {
         }
 
         const filas = datosCSV.split("\n").map(f => f.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/"/g, "").trim()));
-        const encabezados = filas[0];
+        
+        // POSICIONES FIJAS (Ignoramos cómo se llamen los encabezados, buscamos por su número de columna)
+        const idxFecha = 0;   // Columna A (Fecha)
+        const idxCliente = 1; // Columna B (Cliente)
+        const idxEquipo = 2;  // Columna C (Equipo Principal)
 
-        // Búsqueda robusta por si los encabezados tienen espacios extra
-        const idxCliente = encabezados.findIndex(h => h.toLowerCase().includes("cliente"));
-        const idxEquipo = encabezados.findIndex(h => h.toLowerCase().includes("equipo"));
-        const idxFecha = encabezados.findIndex(h => h.toLowerCase().includes("fecha"));
-
+        // Filtramos el historial usando las posiciones exactas (Saltamos la fila 0 que es de encabezados)
         const historial = filas.filter((f, i) => i > 0 && f[idxCliente] === clienteActual && f[idxEquipo] === equipoActual);
 
         if (historial.length === 0) {
@@ -422,30 +421,34 @@ async function consultarHistorial() {
 
         let html = `<h3 style="text-align:center; color: var(--text-main); margin-bottom:15px;">Historial de ${equipoActual}</h3>`;
 
-        // Generamos los bloques colapsables (Acordeón)
         historial.forEach((registro, index) => {
-            let fechaTexto = (idxFecha !== -1 && registro[idxFecha]) ? registro[idxFecha] : "Fecha desconocida";
+            // Extraemos la fecha directo de la columna 0
+            let fechaTexto = (registro[idxFecha] && registro[idxFecha] !== "") ? registro[idxFecha] : "Fecha desconocida";
             let detallesHTML = "";
 
+            // Como sabemos que cada parámetro ocupa 9 columnas y empiezan en la columna 10...
             for(let i = 1; i <= 47; i++) {
-                let idxParam = encabezados.indexOf(`Parametro${i}`);
-                let idxRes = encabezados.indexOf(`Resultado${i}`);
-                let idxUni = encabezados.indexOf(`Unidad${i}`);
-                let idxLimInf = encabezados.indexOf(`LimiteInferior${i}`);
-                let idxLimSup = encabezados.indexOf(`LimiteSuperior${i}`);
-                // NUEVO: Buscamos la columna de Equipo específico (Ej. Equipo1, Equipo2, etc.)
-                let idxSubEquipo = encabezados.indexOf(`Equipo${i}`); 
+                let baseIdx = 10 + ((i - 1) * 9); // Cálculo matemático de la posición
                 
-                if(idxParam !== -1 && idxRes !== -1 && registro[idxParam] && registro[idxParam] !== "N/A" && registro[idxParam] !== "") {
+                let idxParam = baseIdx;          // Parámetro (Ej. Presión)
+                let idxSubEquipo = baseIdx + 2;  // Equipo específico (Ej. Bomba 1)
+                let idxUni = baseIdx + 3;        // Unidad (Ej. PSI)
+                let idxRes = baseIdx + 4;        // Resultado (Ej. 120)
+                let idxLimInf = baseIdx + 6;     // Límite Inferior
+                let idxLimSup = baseIdx + 7;     // Límite Superior
+                
+                // Verificamos si hay un parámetro registrado en esta posición
+                if(registro[idxParam] && registro[idxParam] !== "N/A" && registro[idxParam] !== "") {
                     let resultado = registro[idxRes];
                     let unidad = registro[idxUni] !== "N/A" ? registro[idxUni] : "";
                     let limInf = registro[idxLimInf] !== "N/A" ? registro[idxLimInf] : "";
                     let limSup = registro[idxLimSup] !== "N/A" ? registro[idxLimSup] : "";
-                    // NUEVO: Extraemos el valor del SubEquipo
-                    let subEquipo = (idxSubEquipo !== -1 && registro[idxSubEquipo] !== "N/A" && registro[idxSubEquipo] !== "") ? registro[idxSubEquipo] : equipoActual;
                     
+                    // Si el subEquipo está vacío, usamos el equipo principal por defecto
+                    let subEquipo = (registro[idxSubEquipo] && registro[idxSubEquipo] !== "N/A" && registro[idxSubEquipo] !== "") ? registro[idxSubEquipo] : equipoActual;
+                    
+                    // Solo dibujamos si el técnico realmente capturó un resultado ese día
                     if (resultado && resultado !== "") {
-                        // NUEVO: Agregamos el subEquipo al título del parámetro
                         detallesHTML += `
                         <div style="margin-bottom:8px; font-size: 0.9rem; padding-bottom: 8px; border-bottom: 1px dashed rgba(255,255,255,0.1);">
                             <div style="color: var(--text-muted);">
@@ -458,7 +461,6 @@ async function consultarHistorial() {
                 }
             }
 
-            // Si este reporte tuvo parámetros capturados, creamos el "botón" de la fecha
             if (detallesHTML !== "") {
                 html += `
                 <div style="background: rgba(15, 23, 42, 0.5); border-radius: 12px; margin-bottom: 12px; border: 1px solid var(--border-color); overflow: hidden;">
