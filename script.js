@@ -371,11 +371,12 @@ function guardarReporte() {
         });
 }
 
-// --- NUEVAS FUNCIONES PARA EL HISTORIAL ---//
+// --- NUEVAS FUNCIONES PARA EL HISTORIAL ---
+
 async function consultarHistorial() {
     // 1. Expandir la vista a casi toda la pantalla y mostrar historial
     const divResultado = document.getElementById('resultado');
-    divResultado.style.height = '95dvh'; // Hacemos que ocupe casi toda la pantalla
+    divResultado.style.height = '95dvh'; 
     divResultado.style.maxHeight = '95dvh';
 
     document.getElementById('vista-ficha').style.display = 'none';
@@ -432,17 +433,25 @@ async function consultarHistorial() {
                 let idxUni = encabezados.indexOf(`Unidad${i}`);
                 let idxLimInf = encabezados.indexOf(`LimiteInferior${i}`);
                 let idxLimSup = encabezados.indexOf(`LimiteSuperior${i}`);
+                // NUEVO: Buscamos la columna de Equipo específico (Ej. Equipo1, Equipo2, etc.)
+                let idxSubEquipo = encabezados.indexOf(`Equipo${i}`); 
                 
                 if(idxParam !== -1 && idxRes !== -1 && registro[idxParam] && registro[idxParam] !== "N/A" && registro[idxParam] !== "") {
                     let resultado = registro[idxRes];
                     let unidad = registro[idxUni] !== "N/A" ? registro[idxUni] : "";
                     let limInf = registro[idxLimInf] !== "N/A" ? registro[idxLimInf] : "";
                     let limSup = registro[idxLimSup] !== "N/A" ? registro[idxLimSup] : "";
+                    // NUEVO: Extraemos el valor del SubEquipo
+                    let subEquipo = (idxSubEquipo !== -1 && registro[idxSubEquipo] !== "N/A" && registro[idxSubEquipo] !== "") ? registro[idxSubEquipo] : equipoActual;
                     
                     if (resultado && resultado !== "") {
+                        // NUEVO: Agregamos el subEquipo al título del parámetro
                         detallesHTML += `
                         <div style="margin-bottom:8px; font-size: 0.9rem; padding-bottom: 8px; border-bottom: 1px dashed rgba(255,255,255,0.1);">
-                            <div style="color: var(--text-muted);">${registro[idxParam]} <span style="font-size: 0.75rem; opacity: 0.7;">(Rango: ${limInf} - ${limSup})</span></div>
+                            <div style="color: var(--text-muted);">
+                                <strong>${subEquipo}</strong>, ${registro[idxParam]} 
+                                <span style="font-size: 0.75rem; opacity: 0.7;">(Rango: ${limInf} - ${limSup})</span>
+                            </div>
                             <div style="color: var(--text-main); font-weight: 600; text-align: right;">${resultado} ${unidad}</div>
                         </div>`;
                     }
