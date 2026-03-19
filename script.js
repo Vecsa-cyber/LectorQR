@@ -373,14 +373,18 @@ function guardarReporte() {
 
 // --- NUEVAS FUNCIONES PARA EL HISTORIAL ---
 
+// --- NUEVAS FUNCIONES PARA EL HISTORIAL ---
+
 async function consultarHistorial() {
-    // Ocultar ficha y mostrar/crear la vista de historial
+    // 1. Expandir la vista a casi toda la pantalla y mostrar historial
+    const divResultado = document.getElementById('resultado');
+    divResultado.style.height = '95dvh'; // Hacemos que ocupe casi toda la pantalla
+    divResultado.style.maxHeight = '95dvh';
+
     document.getElementById('vista-ficha').style.display = 'none';
-    
     let vistaHistorial = document.getElementById('vista-historial');
     vistaHistorial.style.display = 'block';
     
-    // Loader
     vistaHistorial.innerHTML = `
         <div style="text-align:center; padding: 20px;">
             <div class="loader"></div>
@@ -389,7 +393,6 @@ async function consultarHistorial() {
     `;
 
     try {
-        // Usamos el mismo truco CSV pero apuntando a la pestaña "Registro"
         const URL_REGISTRO = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Registro&t=${new Date().getTime()}`;
         const respuesta = await fetch(URL_REGISTRO);
         const datosCSV = await respuesta.text();
@@ -401,11 +404,11 @@ async function consultarHistorial() {
         const filas = datosCSV.split("\n").map(f => f.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(c => c.replace(/"/g, "").trim()));
         const encabezados = filas[0];
 
-        const idxCliente = encabezados.indexOf("Cliente");
-        const idxEquipo = encabezados.indexOf("Equipo"); // Nota: en esta hoja se llama "Equipo", no "Equipos"
-        const idxFecha = encabezados.indexOf("Fecha");
+        // Búsqueda robusta por si los encabezados tienen espacios extra
+        const idxCliente = encabezados.findIndex(h => h.toLowerCase().includes("cliente"));
+        const idxEquipo = encabezados.findIndex(h => h.toLowerCase().includes("equipo"));
+        const idxFecha = encabezados.findIndex(h => h.toLowerCase().includes("fecha"));
 
-        // Filtrar historial (Ignoramos la fila 0 de encabezados)
         const historial = filas.filter((f, i) => i > 0 && f[idxCliente] === clienteActual && f[idxEquipo] === equipoActual);
 
         if (historial.length === 0) {
@@ -419,18 +422,13 @@ async function consultarHistorial() {
             return;
         }
 
-        // Si hay historial, armamos el HTML
         let html = `<h3 style="text-align:center; color: var(--text-main); margin-bottom:15px;">Historial de ${equipoActual}</h3>`;
 
-        // Mostramos los reportes encontrados
-        historial.forEach(registro => {
-            html += `
-            <div style="background: rgba(15, 23, 42, 0.5); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid var(--border-color);">
-                <h4 style="color: var(--accent); margin-bottom: 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">
-                    📅 Fecha: ${registro[idxFecha]}
-                </h4>`;
-            
-            // Recorremos los 47 parámetros para ver cuáles se llenaron en ese reporte
+        // Generamos los bloques colapsables (Acordeón)
+        historial.forEach((registro, index) => {
+            let fechaTexto = (idxFecha !== -1 && registro[idxFecha]) ? registro[idxFecha] : "Fecha desconocida";
+            let detallesHTML = "";
+
             for(let i = 1; i <= 47; i++) {
                 let idxParam = encabezados.indexOf(`Parametro${i}`);
                 let idxRes = encabezados.indexOf(`Resultado${i}`);
@@ -445,18 +443,31 @@ async function consultarHistorial() {
                     let limSup = registro[idxLimSup] !== "N/A" ? registro[idxLimSup] : "";
                     
                     if (resultado && resultado !== "") {
-                        html += `
-                        <div style="margin-bottom:8px; font-size: 0.9rem;">
+                        detallesHTML += `
+                        <div style="margin-bottom:8px; font-size: 0.9rem; padding-bottom: 8px; border-bottom: 1px dashed rgba(255,255,255,0.1);">
                             <div style="color: var(--text-muted);">${registro[idxParam]} <span style="font-size: 0.75rem; opacity: 0.7;">(Rango: ${limInf} - ${limSup})</span></div>
                             <div style="color: var(--text-main); font-weight: 600; text-align: right;">${resultado} ${unidad}</div>
                         </div>`;
                     }
                 }
             }
-            html += `</div>`;
+
+            // Si este reporte tuvo parámetros capturados, creamos el "botón" de la fecha
+            if (detallesHTML !== "") {
+                html += `
+                <div style="background: rgba(15, 23, 42, 0.5); border-radius: 12px; margin-bottom: 12px; border: 1px solid var(--border-color); overflow: hidden;">
+                    <div onclick="toggleAcordeon('hist_${index}')" style="padding: 15px; display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); cursor: pointer;">
+                        <strong style="color: var(--accent); font-size: 1.1rem;">📅 ${fechaTexto}</strong>
+                        <span id="icono_hist_${index}" style="color: var(--text-muted); font-size: 0.8rem;">▼ VER</span>
+                    </div>
+                    <div id="hist_${index}" style="display: none; padding: 15px; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.2);">
+                        ${detallesHTML}
+                    </div>
+                </div>`;
+            }
         });
 
-        html += `<button class="btn btn-secondary" onclick="cerrarHistorial()">Volver a la Ficha</button>`;
+        html += `<button class="btn btn-secondary" onclick="cerrarHistorial()" style="margin-top: 20px;">Volver a la Ficha</button>`;
         vistaHistorial.innerHTML = html;
 
     } catch (error) {
@@ -467,6 +478,29 @@ async function consultarHistorial() {
             <button class="btn btn-secondary" onclick="cerrarHistorial()">Volver</button>
         `;
     }
+}
+
+// Función que abre y cierra las fechas del historial
+function toggleAcordeon(id) {
+    const contenido = document.getElementById(id);
+    const icono = document.getElementById('icono_' + id);
+    if (contenido.style.display === 'none') {
+        contenido.style.display = 'block';
+        icono.innerText = '▲ OCULTAR';
+    } else {
+        contenido.style.display = 'none';
+        icono.innerText = '▼ VER';
+    }
+}
+
+function cerrarHistorial() {
+    // Regresamos el tamaño del panel a la normalidad
+    const divResultado = document.getElementById('resultado');
+    divResultado.style.height = 'auto'; 
+    divResultado.style.maxHeight = '85dvh';
+
+    document.getElementById('vista-historial').style.display = 'none';
+    document.getElementById('vista-ficha').style.display = 'block';
 }
 
 function cerrarHistorial() {
