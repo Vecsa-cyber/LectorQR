@@ -371,10 +371,7 @@ function guardarReporte() {
         });
 }
 
-// --- NUEVAS FUNCIONES PARA EL HISTORIAL ---
-
-// --- NUEVAS FUNCIONES PARA EL HISTORIAL ---
-
+// --- NUEVAS FUNCIONES PARA EL HISTORIAL ---//
 async function consultarHistorial() {
     // 1. Expandir la vista a casi toda la pantalla y mostrar historial
     const divResultado = document.getElementById('resultado');
